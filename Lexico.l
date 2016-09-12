@@ -5,6 +5,7 @@
 //#include "y.tab.h"
 #include <string.h>
 
+char * cortarCadena(char* ,int);
 char * replace(char const * const,  char const * const,  char const * const) ;
 
 unsigned long entero64bits;
@@ -152,6 +153,7 @@ char * replace(char const * const original,  char const * const pattern,  char c
 	}
 }
 
+char * cortarCadena(char* cad,int tam){
 	if(strlen(cad)>tam)
 		cad[tam]='\0';
 	return cad;
