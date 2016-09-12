@@ -1,0 +1,8 @@
+programa 
+	declaraciones	
+		DIM [a,b,c,d,e] AS [entero,entero,cadena,cadena,entero]
+	fin_declaraciones
+
+	WRITE "Inicio del programa"
+	a=10
+fin_programa
