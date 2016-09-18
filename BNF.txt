@@ -1,0 +1,79 @@
+<programa> ::= 	programa 
+					<bloque_declaraciones> 
+					<bloque_sentencias> 
+				fin_programa
+				
+<bloque_declaraciones> ::= 	declaraciones
+								<declaraciones>
+							fin_declaraciones
+							
+<declaraciones> ::=	<declaracion>
+					| <declaraciones> <declaracion>
+					
+<declaracion> ::= 	[ <lista_variables> ] = [ <lista_tipos> ]
+
+<lista_variables> ::= 	id
+						| id , <lista_variables>
+						
+<lista_tipo> ::=	<tipo>
+					| <tipo> , <lista_tipo>
+					
+<tipo> ::= 	entero
+			| real
+			| cadena		
+
+<bloque_sentencias> ::=	<sentencia>
+						| <sentencia> <bloque_sentencias>
+						
+<sentencia> ::=	<write>
+				| <read>
+				| <asignacion>
+				| if ( <condicion> ) <bloque_if> end_if
+				| while ( <condicion> ) <bloque_sentencias> end_while
+
+<write> ::= write constante_cadena
+			| write id
+
+<read> ::= 	read id
+			
+			
+				
+<bloque_if> ::= <bloque_sentencias>
+				| <bloque_sentencias> else <bloque_sentencias>
+				
+<condicion> ::= <expresion> <comparador> <expresion>
+				| not <expresion>
+				| not <condicion>
+				| <expresion> <operador_logico> <expresion>
+				| <expresion> <operador_logico> <condicion>
+				
+<operador_logico> ::=	and
+						| or
+						
+<comparador> ::= 	=
+					| !=
+					| >
+					| <
+					| >=
+					| <=
+					
+<asignacion> ::= id = <expresion>		
+
+<expresion> ::= 	<termino>		
+					| <expresion> - <termino>
+					| <expresion> + <termino>
+					| <expresion> . <termino>
+					
+<termino> ::= 	<factor>
+				| <termino> * <factor>
+				| <termino> / <factor>
+				
+<factor> ::= 	id				
+				| constante_entera
+				| - constante_entera
+				| constante_real
+				| - constante_real
+				| constante_cadena
+				
+				
+					
