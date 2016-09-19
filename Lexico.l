@@ -52,6 +52,9 @@ enum token{
 	WRITE,
 	READ,
 	FILTER,
+	ARRAY,
+	AVG,
+	AVERAGE,
 	COMENTARIO
 };
 
