@@ -1,62 +1,81 @@
 %{
-#include <stdio.h>
-#include <stdlib.h>
-#include <conio.h>
-//#include "y.tab.h"
-#include <string.h>
+//INCLUDE-DEFINE/////////////////////////////////////////////////////
+	#include <stdio.h>
+	#include <stdlib.h>
+	#include <conio.h>
+	//#include "y.tab.h"
+	#include <string.h>
 
-char * cortarCadena(char* ,int);
-char * replace(char const * const,  char const * const,  char const * const) ;
+//ENUMS//////////////////////////////////////////////////////////////
+	enum token{
+		ID=1,
+		CADENA,
+		ENTERO,
+		REAL,
+		COMILLA,
+		COMA,
+		C_A,
+		C_C,
+		P_C,
+		P_A,
+		GB,
+		OP_CONCAT,
+		OP_SUMA,
+		OP_RESTA,
+		OP_MUL,
+		OP_DIV,
+		OP_ASIG,
+		COMPARADOR,
+		AND,
+		OR,
+		OP_NOT,
+		CONST_REAL,
+		CONST_CADENA,
+		CONST_ENTERO,
+		PROGRAMA,
+		FIN_PROGRAMA,
+		DECLARACIONES,
+		FIN_DECLARACIONES,
+		DIM,
+		AS,
+		IF,
+		ELSE,
+		THEN,
+		ENDIF,
+		WHILE,
+		ENDWHILE,
+		ALLEQUAL,
+		WRITE,
+		READ,
+		FILTER,
+		COMENTARIO
+	};
 
-unsigned long entero64bits;
-char *puntero;
+	enum valorMaximo{
+		ENTERO_MAXIMO = 32768,
+		CADENA_MAXIMA = 31,
+		TAM = 100
+	};
 
-enum token{
-	ID=1,
-	CADENA,
-	ENTERO,
-	REAL,
-	COMILLA,
-	COMA,
-	C_A,
-	C_C,
-	P_C,
-	P_A,
-	GB,
-	OP_CONCAT,
-	OP_SUMA,
-	OP_RESTA,
-	OP_MUL,
-	OP_DIV,
-	OP_ASIG,
-	COMPARADOR,
-	AND,
-	OR,
-	OP_NOT,
-	CONST_REAL,
-	CONST_CADENA,
-	CONST_ENTERO,
-	PROGRAMA,
-	FIN_PROGRAMA,
-	DECLARACIONES,
-	FIN_DECLARACIONES,
-	DIM,
-	AS,
-	IF,
-	ELSE,
-	THEN,
-	ENDIF,
-	WHILE,
-	ENDWHILE,
-	ALLEQUAL,
-	WRITE,
-	READ,
-	FILTER,
-	ARRAY,
-	AVG,
-	AVERAGE,
-	COMENTARIO
-};
+//ESTRUCTURAS////////////////////////////////////////////////////////
+	typedef struct{
+		char nombre[33];
+		char valor[33];
+		char tipo[33];
+		int longitud;
+	} registro;
+
+//DEFINICIONES DE FUNCIONES//////////////////////////////////////////
+	char * cortarCadena(char* ,int);
+	char * replace(char const * const,  char const * const,  char const * const) ;
+	void grabarTablaDeSimbolos(int);
+
+//VARIABLES GLOBALES/////////////////////////////////////////////////
+	unsigned long entero64bits;
+	registro tablaVariables[TAM];
+	registro tablaConstantes[TAM];
+	int indiceVariable=0;
+	int indiceConstante=0;
 
 %}
 
@@ -176,4 +195,27 @@ int main(int argc,char *argv[])
 	}
 	fclose(yyin);
 	return 0;
+}
+
+void grabarTablaDeSimbolos(int error){
+	FILE*pf=fopen("ts.txt","w+");
+	int i;
+	if(!pf){
+		printf("Error al crear la tabla de simbolos\n");
+		return;
+	}
+	fprintf(pf,"%-32s|\t%-32s|\t%-32s|\t%-32s\n","NOMBRE","TIPO","VALOR","LONGITUD");
+	for(i = 0; i<indiceVariable; i++){
+		fprintf(pf,"%-32s|\t%-32s|\t%-32s|\t%-32s\n",tablaVariables[i].nombre,tablaVariables[i].tipo,"----------","----------");
+	}
+
+	for(i = 0; i<indiceConstante; i++){
+		if(tablaConstantes[i].longitud==0)
+			fprintf(pf,"%-32s|\t%-32s|\t%-32s|\t%-32s\n",tablaConstantes[i].nombre,tablaConstantes[i].tipo,tablaConstantes[i].valor,"----------");
+		else
+			fprintf(pf,"%-32s|\t%-32s|\t%-32s|\t%-32d\n",tablaConstantes[i].nombre,tablaConstantes[i].tipo,tablaConstantes[i].valor,tablaConstantes[i].longitud);
+	}
+	if(error==1)
+		fprintf(pf,"TABLA INCOMPLETA (ERROR DE COMPILACION)\n");
+	fclose(pf);
 }
