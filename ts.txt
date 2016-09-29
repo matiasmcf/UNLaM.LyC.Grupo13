@@ -1,0 +1,5 @@
+NOMBRE                          |	TIPO                            |	VALOR                           |	LONGITUD                        
+Inicio_del_programa             |	cadena                          |	"Inicio del programa"           |	21                              
+10                              |	entero                          |	10                              |	----------                      
+2p2                             |	real                            |	2.2                             |	----------                      
+10                              |	entero                          |	10                              |	----------                      

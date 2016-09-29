@@ -75,7 +75,7 @@
 	char* cortarCadena(char* ,int);
 	char* reemplazarCaracter(char const * const,  char const * const,  char const * const) ;
 	void grabarTablaDeSimbolos(int);
-	void insertarEnTabla(tipoDato);
+	void insertarEnTablaConstante(tipoDato);
 	char* normalizar(tipoDato, char*);
 
 //VARIABLES GLOBALES/////////////////////////////////////////////////
@@ -87,8 +87,8 @@
 
 %}
 
-%option noyywrap  
-%option yylineno 
+%option noyywrap
+%option yylineno
 DIGITO						[0-9]
 LETRA						[a-zA-Z]
 ID							{LETRA}({LETRA}|{DIGITO}|_)*
@@ -136,13 +136,13 @@ CONST_REAL					([0-9]*\.[0-9]+)
 "endwhile"					{ printf("ENDWHILE\n");return ENDWHILE; }
 "AllEqual"					{ printf("ALLEQUAL\n");return ALLEQUAL; }
 "WRITE"						{ printf("WRITE\n");return WRITE; }
-"READ"						{ printf("READ\n");return READ; } 
+"READ"						{ printf("READ\n");return READ; }
 "FILTER"					{ printf("FILTER\n");return FILTER; }
 "_"							{ printf("GB\n");return GB;}
-{ID}						{ printf("ID\n");return ID;}				
-{CONST_ENTERO}	  			{ printf("CONST_ENTERO\n");return CONST_ENTERO;}
-{CONST_REAL}				{ printf("CONST_REAL\n");return CONST_REAL;}
-{CONST_CADENA}				{ printf("CONST_CADENA\n");printf("NOMBRE ES: %s\n", normalizar(tipoCadena,yytext));;return CONST_CADENA;}
+{ID}						{ printf("ID\n");return ID;}
+{CONST_ENTERO}	  			{ printf("CONST_ENTERO\n");insertarEnTablaConstante(tipoEntero);return CONST_ENTERO;}
+{CONST_REAL}				{ printf("CONST_REAL\n");insertarEnTablaConstante(tipoReal);return CONST_REAL;}
+{CONST_CADENA}				{ printf("CONST_CADENA\n");insertarEnTablaConstante(tipoCadena);return CONST_CADENA;}
 {COMENTARIO}				{ printf("COMENTARIO\n");return COMENTARIO;}
 "\n"
 "\r\n"
@@ -150,10 +150,10 @@ CONST_REAL					([0-9]*\.[0-9]+)
 " "
 . 							{ printf("Linea: %d. Error lexico. Descripcion: El caracter %s es invalido\n",yylineno,yytext); exit(1);}
 
-%%	
+%%
 
 
-char * reemplazarCaracter(char const * const original,  char const * const pattern,  char const * const replacement) 
+char * reemplazarCaracter(char const * const original,  char const * const pattern,  char const * const replacement)
 {
 	size_t const replen = strlen(replacement);
 	size_t const patlen = strlen(pattern);
@@ -202,6 +202,7 @@ int main(int argc,char *argv[])
 		}
 	}
 	fclose(yyin);
+	grabarTablaDeSimbolos(0);
 	return 0;
 }
 
@@ -234,4 +235,46 @@ char* normalizar(tipoDato tipo, char* cadena){
 	cadena=reemplazarCaracter(cadena,";","pc");
 	cadena=reemplazarCaracter(cadena,"-","m");
 	cadena=reemplazarCaracter(cadena," ","_");
+	cadena=reemplazarCaracter(cadena,"\"","");
+}
+
+
+void insertarEnTablaConstante(tipoDato type){
+	switch (type) {
+		case tipoReal:
+					if (atof(yytext)<0) {
+						printf("ERROR-CONSTANTE NEGATIVA : %s NUMERO DE LINEA %d", yytext, yylineno );
+						exit(1);
+					}
+					if (atof(yytext)>ENTERO_MAXIMO) {
+						printf("ERROR-CONSTANTE SUPERA MAXIMO : %s NUMERO DE LINEA %d", yytext, yylineno );
+						exit(1);
+					}
+					strcpy(tablaConstantes[indiceConstante].valor,yytext);
+					strcpy(tablaConstantes[indiceConstante].tipo,"real");
+					tablaConstantes[indiceConstante].longitud=0;
+					strcpy(tablaConstantes[indiceConstante++].nombre,normalizar(tipoCadena,yytext));
+					break;
+		case tipoCadena:
+					strcpy(tablaConstantes[indiceConstante].valor,yytext);
+					strcpy(tablaConstantes[indiceConstante].tipo,"cadena");
+					tablaConstantes[indiceConstante].longitud=strlen(yytext);
+					strcpy(tablaConstantes[indiceConstante++].nombre,normalizar(tipoCadena,yytext));
+					break;
+		case tipoEntero:
+					if (atoi(yytext)<0) {
+						printf("ERROR-CONSTANTE NEGATIVA : %s NUMERO DE LINEA %d", yytext, yylineno );
+						exit(1);
+					}
+					if (atoi(yytext)>ENTERO_MAXIMO) {
+						printf("ERROR-CONSTANTE SUPERA MAXIMO : %s NUMERO DE LINEA %d", yytext, yylineno );
+						exit(1);
+					}
+					strcpy(tablaConstantes[indiceConstante].valor,yytext);
+					strcpy(tablaConstantes[indiceConstante].tipo,"entero");
+					tablaConstantes[indiceConstante].longitud=0;
+					strcpy(tablaConstantes[indiceConstante++].nombre,normalizar(tipoCadena,yytext));
+					break;
+	}
+
 }
