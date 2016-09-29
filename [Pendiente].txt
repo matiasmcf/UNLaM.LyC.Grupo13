@@ -1,8 +1,6 @@
 En léxico:
 	• Agregar/modificar los token necesarios para los temas especiales.
-	• Realizar validaciones.
+	• Validar rango de los numeros reales de 32 bits.
 
-Al crear el sintáctico:
-	• Eliminar el main del léxico.
-	• Eliminar el enum "token".
-	• Eliminar printf.
+En sintáctico:
+	• Organizar la gramática.

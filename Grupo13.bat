@@ -1,6 +1,10 @@
 %flex% Lexico.l
-%gcc% lex.yy.c -o TPFinal.exe
+%bison% -dyv Sintactico.y
+%gcc% lex.yy.c y.tab.c -o TPFinal.exe
 TPfinal.exe "prueba.txt"
 pause
 del lex.yy.c
-del TPfinal.exe
+del y.tab.c
+del y.output
+del y.tab.h
+del TPFinal.exe

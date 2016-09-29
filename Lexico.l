@@ -3,7 +3,7 @@
 	#include <stdio.h>
 	#include <stdlib.h>
 	#include <conio.h>
-	//#include "y.tab.h"
+	#include "y.tab.h"
 	#include <string.h>
 
 //DEFINE/////////////////////////////////////////////////////////////
@@ -11,52 +11,8 @@
 	#define NO_ENCONTRADO -1
 
 //ENUMS//////////////////////////////////////////////////////////////
-	enum token{
-		ID=1,
-		CADENA,
-		ENTERO,
-		REAL,
-		COMILLA,
-		COMA,
-		C_A,
-		C_C,
-		P_C,
-		P_A,
-		GB,
-		OP_CONCAT,
-		OP_SUMA,
-		OP_RESTA,
-		OP_MUL,
-		OP_DIV,
-		OP_ASIG,
-		COMPARADOR,
-		AND,
-		OR,
-		OP_NOT,
-		CONST_REAL,
-		CONST_CADENA,
-		CONST_ENTERO,
-		PROGRAMA,
-		FIN_PROGRAMA,
-		DECLARACIONES,
-		FIN_DECLARACIONES,
-		DIM,
-		AS,
-		IF,
-		ELSE,
-		THEN,
-		ENDIF,
-		WHILE,
-		ENDWHILE,
-		ALLEQUAL,
-		WRITE,
-		READ,
-		FILTER,
-		COMENTARIO
-	};
-
 	enum valorMaximo{
-		ENTERO_MAXIMO = 32768,
+		ENTERO_MAXIMO = 65535,
 		CADENA_MAXIMA = 31,
 		TAM = 100
 	};
@@ -91,10 +47,12 @@
 	char* cortarCadena(char* ,int);
 	char* reemplazarCaracter(char const * const,  char const * const,  char const * const) ;
 	void grabarTablaDeSimbolos(int);
-	void insertarEnTablaDeSimbolos(sectorTabla, tipoDato);
+	void insertarEnTablaDeSimbolos(enum sectorTabla,enum tipoDato);
 	char* normalizar(char*);
-	int buscarEnTablaDeSimbolos(sectorTabla, char*);
-	void mensajeDeError(error,const char*);
+	int buscarEnTablaDeSimbolos(enum sectorTabla, char*);
+	void mensajeDeError(enum error,const char*);
+	char * cortarCadena(char* ,int);
+	void guardarToken(char *);
 
 //VARIABLES GLOBALES/////////////////////////////////////////////////
 	unsigned long entero64bits;
@@ -102,6 +60,7 @@
 	registro tablaConstantes[TAM];
 	int indiceVariable=0;
 	int indiceConstante=0;
+	char *tiraDeTokens;
 
 %}
 
@@ -117,51 +76,48 @@ CONST_REAL					([0-9]*\.[0-9]+)
 
 %%
 
-"="							{ printf("OP_ASIG\n");return OP_ASIG;}
-"+"							{ printf("OP_SUMA\n");return OP_SUMA;}
-"++"						{ printf("OP_CONCAT\n");return OP_CONCAT; }
-"-"							{ printf("OP_RESTA\n");return OP_RESTA;}
-"*"							{ printf("OP_MUL\n");return OP_MUL;}
-"/"							{ printf("OP_DIV\n");return OP_DIV;}
-"("							{ printf("P_A\n");return P_A;}
-")"							{ printf("P_C\n");return P_C;}
-"["							{ printf("C_A\n");return C_A;}
-"]"							{ printf("C_C\n");return C_C;}
-"\""						{ printf("COMILLA\n");return COMILLA;}
-"=="						{ printf("CMP_IGUAL\n");return COMPARADOR;}
-"!="						{ printf("CMP_DIST\n");return COMPARADOR; }
-">"							{ printf("CMP_MAYOR\n");return COMPARADOR; }
-"<"							{ printf("CMP_MENOR\n");return COMPARADOR; }
-"<="						{ printf("CMP_NENIG\n");return COMPARADOR; }
-">="						{ printf("CMP_MAYIG\n");return COMPARADOR; }
-"and"						{ printf("AND\n");return AND; }
-"or"						{ printf("OR\n");return OR; }
-"not"              			{ printf("OP_NOT\n");return OP_NOT; }
-"programa"					{ printf("PROGRAMA\n");return PROGRAMA;}
-"fin_programa"				{ printf("FIN_PROGRAMA\n");return FIN_PROGRAMA;}
-"declaraciones"				{ printf("DECLARACIONES\n");return DECLARACIONES;}
-"fin_declaraciones"			{ printf("FIN_DECLARACIONES\n");return FIN_DECLARACIONES;}
-","							{ printf("COMA\n");return COMA; }
-"real"						{ printf("REAL\n");return REAL;}
-"entero"					{ printf("ENTERO\n");return ENTERO;}
-"cadena"					{ printf("CADENA\n");return CADENA;}
-"DIM"						{ printf("DIM\n");return DIM; }
-"AS"						{ printf("AS\n");return AS; }
-"if"						{ printf("IF\n");return IF; }
-"else"						{ printf("ELSE\n");return ELSE; }
-"endif"						{ printf("ENDIF\n");return ENDIF;}
-"while"						{ printf("WHILE\n");return WHILE; }
-"endwhile"					{ printf("ENDWHILE\n");return ENDWHILE; }
-"AllEqual"					{ printf("ALLEQUAL\n");return ALLEQUAL; }
-"WRITE"						{ printf("WRITE\n");return WRITE; }
-"READ"						{ printf("READ\n");return READ; }
-"FILTER"					{ printf("FILTER\n");return FILTER; }
-"_"							{ printf("GB\n");return GB;}
-{ID}						{ printf("ID\n");insertarEnTablaDeSimbolos(sectorVariables, sinTipo);return ID;}
-{CONST_ENTERO}	  			{ printf("CONST_ENTERO: %s\n",yytext);insertarEnTablaDeSimbolos(sectorConstantes, tipoEntero);return CONST_ENTERO;}
-{CONST_REAL}				{ printf("CONST_REAL: %s\n",yytext);insertarEnTablaDeSimbolos(sectorConstantes, tipoReal);return CONST_REAL;}
-{CONST_CADENA}				{ printf("CONST_CADENA: %s\n",yytext);insertarEnTablaDeSimbolos(sectorConstantes, tipoCadena);return CONST_CADENA;}
-{COMENTARIO}				{ printf("COMENTARIO\n");return COMENTARIO;}
+"="							{ guardarToken("OP_ASIG\n");return OP_ASIG;}
+"+"							{ guardarToken("OP_SUMA\n");return OP_SUMA;}
+"++"						{ guardarToken("OP_CONCAT\n");return OP_CONCAT; }
+"-"							{ guardarToken("OP_RESTA\n");return OP_RESTA;}
+"*"							{ guardarToken("OP_MUL\n");return OP_MUL;}
+"/"							{ guardarToken("OP_DIV\n");return OP_DIV;}
+"("							{ guardarToken("P_A\n");return P_A;}
+")"							{ guardarToken("P_C\n");return P_C;}
+"["							{ guardarToken("C_A\n");return C_A;}
+"]"							{ guardarToken("C_C\n");return C_C;}
+"\""						{ guardarToken("COMILLA\n");return COMILLA;}
+"=="						{ guardarToken("CMP_IGUAL\n");return COMPARADOR;}
+"!="						{ guardarToken("CMP_DIST\n");return COMPARADOR; }
+">"							{ guardarToken("CMP_MAYOR\n");return COMPARADOR; }
+"<"							{ guardarToken("CMP_MENOR\n");return COMPARADOR; }
+"<="						{ guardarToken("CMP_NENIG\n");return COMPARADOR; }
+">="						{ guardarToken("CMP_MAYIG\n");return COMPARADOR; }
+"and"						{ guardarToken("AND\n");return AND; }
+"or"						{ guardarToken("OR\n");return OR; }
+"not"              			{ guardarToken("OP_NOT\n");return OP_NOT; }
+"programa"					{ guardarToken("PROGRAMA\n");return PROGRAMA;}
+"fin_programa"				{ guardarToken("FIN_PROGRAMA\n");return FIN_PROGRAMA;}
+"DECVAR"					{ guardarToken("DECLARACIONES\n");return DECLARACIONES;}
+"ENDEC"						{ guardarToken("FIN_DECLARACIONES\n");return FIN_DECLARACIONES;}
+","							{ guardarToken("COMA\n");return COMA; }
+"real"						{ guardarToken("REAL\n");return REAL;}
+"entero"					{ guardarToken("ENTERO\n");return ENTERO;}
+"cadena"					{ guardarToken("CADENA\n");return CADENA;}
+"DIM"						{ guardarToken("DIM\n");return DIM; }
+"AS"						{ guardarToken("AS\n");return AS; }
+"if"						{ guardarToken("IF\n");return IF; }
+"else"						{ guardarToken("ELSE\n");return ELSE; }
+"endif"						{ guardarToken("ENDIF\n");return ENDIF;}
+"WRITE"						{ guardarToken("WRITE\n");return WRITE; }
+"READ"						{ guardarToken("READ\n");return READ; }
+"REPEAT"					{ guardarToken("REPEAT\n");return REPEAT; }
+"_"							{ guardarToken("GB\n");return GB;}
+{ID}						{ guardarToken("ID\n");insertarEnTablaDeSimbolos(sectorVariables, sinTipo);return ID;}
+{CONST_ENTERO}	  			{ guardarToken("CONST_ENTERO\n");insertarEnTablaDeSimbolos(sectorConstantes, tipoEntero);return CONST_ENTERO;}
+{CONST_REAL}				{ guardarToken("CONST_REAL\n");insertarEnTablaDeSimbolos(sectorConstantes, tipoReal);return CONST_REAL;}
+{CONST_CADENA}				{ guardarToken("CONST_CADENA\n");insertarEnTablaDeSimbolos(sectorConstantes, tipoCadena);return CONST_CADENA;}
+{COMENTARIO}				{ guardarToken("COMENTARIO\n");}
 "\n"
 "\r\n"
 "\t"
@@ -207,24 +163,16 @@ char * cortarCadena(char* cad,int tam){
 	return cad;
 }
 
-
-int main(int argc,char *argv[])
-{
-	if ((yyin = fopen(argv[1], "rt")) == NULL)
-	{
-		printf("\nNo se puede abrir el archivo: %s\n", argv[1]);
-	}
-	else
-	{
-		while(yylex()!=0){
-		}
-	}
-	fclose(yyin);
-	grabarTablaDeSimbolos(0);
-	return 0;
-}
-
 void grabarTablaDeSimbolos(int error){
+	//TIRA DE TOKENS
+	FILE*pt=fopen("tiraDeTokens.txt","w+");
+	if(!pt){
+		printf("Error al crear la tabla de simbolos\n");
+		return;
+	}
+	fprintf(pt,"%s",tiraDeTokens);
+	fclose(pt);
+	//
 	FILE*pf=fopen("ts.txt","w+");
 	int i;
 	if(!pf){
@@ -233,7 +181,7 @@ void grabarTablaDeSimbolos(int error){
 	}
 	fprintf(pf,"%-32s|\t%-32s|\t%-32s|\t%-32s\n","NOMBRE","TIPO","VALOR","LONGITUD");
 	for(i = 0; i<indiceVariable; i++){
-		fprintf(pf,"%-32s|\t%-32s|\t%-32s|\t%-32s\n",tablaVariables[i].nombre,tablaVariables[i].tipo,"* variable *","----------");
+		fprintf(pf,"%-32s|\t%-32s|\t%-32s|\t%-32s\n",tablaVariables[i].nombre,tablaVariables[i].tipo,"----------","----------");
 	}
 
 	for(i = 0; i<indiceConstante; i++){
@@ -248,7 +196,7 @@ void grabarTablaDeSimbolos(int error){
 }
 
 char* normalizar(char* cadena){
-	char *aux = (char *) malloc( sizeof(char) * (strlen(cadena)) + 2);;
+	char *aux = (char *) malloc( sizeof(char) * (strlen(cadena)) + 2);
 	strcpy(aux,CARACTER_NOMBRE);
 	strcat(aux,cadena);
 	aux=reemplazarCaracter(aux,",","c");
@@ -262,7 +210,7 @@ char* normalizar(char* cadena){
 }
 
 
-void insertarEnTablaDeSimbolos(sectorTabla sector, tipoDato tipo){
+void insertarEnTablaDeSimbolos(enum sectorTabla sector, enum tipoDato tipo){
 	if(buscarEnTablaDeSimbolos(sectorConstantes,yytext)!=NO_ENCONTRADO)
 		return;
 	switch(sector){
@@ -279,6 +227,8 @@ void insertarEnTablaDeSimbolos(sectorTabla sector, tipoDato tipo){
 
 				case tipoCadena:
 					yytext=reemplazarCaracter(yytext,"\"","");
+					if(strlen(yytext)>=CADENA_MAXIMA)
+						mensajeDeError(errorCadenaDemasiadoLarga, yytext);
 					strcpy(tablaConstantes[indiceConstante].valor,yytext);
 					strcpy(tablaConstantes[indiceConstante].tipo,"cadena");
 					tablaConstantes[indiceConstante].longitud=strlen(yytext);
@@ -307,16 +257,18 @@ void insertarEnTablaDeSimbolos(sectorTabla sector, tipoDato tipo){
 	}
 }
 
-int buscarEnTablaDeSimbolos(sectorTabla sector, char* objetivo){
+int buscarEnTablaDeSimbolos(enum sectorTabla sector, char* objetivo){
 	objetivo=normalizar(objetivo);
+	int i;
 	switch(sector){
 		case sectorConstantes:
-				for(int i=0;i<indiceConstante;i++)
+				for(i=0;i<indiceConstante;i++)
 					if(strcmp(tablaConstantes[i].nombre,objetivo)==0)
 						return i;
 				break;
+
 		case sectorVariables:
-				for(int i=0;i<indiceVariable;i++)
+				for(i=0;i<indiceVariable;i++)
 					if(strcmp(tablaVariables[i].nombre,objetivo)==0)
 						return i;
 				break;
@@ -324,20 +276,29 @@ int buscarEnTablaDeSimbolos(sectorTabla sector, char* objetivo){
 	return NO_ENCONTRADO;
 }
 
-void mensajeDeError(error error,const char* info){
+void mensajeDeError(enum error error,const char* info){
 	grabarTablaDeSimbolos(1);
-	printf("[Linea %d]: ",yylineno);
+	printf("[Linea %d] ",yylineno);
 	switch(error){ 
         case errorEnteroFueraDeRango: 
-            printf("Entero %s fuera de rango [0 ; %d]\n",info,ENTERO_MAXIMO-1);
+            printf("ERROR LEXICO: Entero %s fuera de rango [0 ; %d]\n",info,ENTERO_MAXIMO-1);
             break ;
 		case errorRealFueraDeRango: 
-            printf("Real %s fuera de rango. Debe ser un real de 32bits\n",info);
+            printf("ERROR LEXICO: Real %s fuera de rango. Debe ser un real de 32bits\n",info);
             break ;
         case errorCadenaDemasiadoLarga:
-            printf("Cadena: \"%s\" fuera de rango. La longitud maxima es 30 caracteres\n", info);
+            printf("ERROR LEXICO: Cadena \"%s\" fuera de rango. La longitud maxima es 30 caracteres\n", info);
             break ; 
       }
        system ("Pause");
 	   exit (1);
 	 }
+
+void guardarToken(char* token){
+	char* aux = (char*) malloc ( sizeof(char) * (strlen(tiraDeTokens)) +1);
+	strcpy(aux, tiraDeTokens);
+	tiraDeTokens=(char*) malloc ( sizeof(char) * (strlen(aux)) + strlen(token)+1);
+	strcpy(tiraDeTokens,aux);
+	strcat(tiraDeTokens,token);
+	printf("%s",token);
+}
