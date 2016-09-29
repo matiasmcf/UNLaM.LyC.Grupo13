@@ -1,5 +1,12 @@
 NOMBRE                          |	TIPO                            |	VALOR                           |	LONGITUD                        
-Inicio_del_programa             |	cadena                          |	"Inicio del programa"           |	21                              
-10                              |	entero                          |	10                              |	----------                      
-2p2                             |	real                            |	2.2                             |	----------                      
-10                              |	entero                          |	10                              |	----------                      
+_a                              |	----------                      |	* variable *                    |	----------                      
+_b                              |	----------                      |	* variable *                    |	----------                      
+_c                              |	----------                      |	* variable *                    |	----------                      
+_d                              |	----------                      |	* variable *                    |	----------                      
+_e                              |	----------                      |	* variable *                    |	----------                      
+_a                              |	----------                      |	* variable *                    |	----------                      
+_b                              |	----------                      |	* variable *                    |	----------                      
+_c                              |	----------                      |	* variable *                    |	----------                      
+_Inicio_del_programa            |	cadena                          |	Inicio del programa             |	19                              
+_10                             |	entero                          |	10                              |	----------                      
+_2p2                            |	real                            |	2.2                             |	----------                      

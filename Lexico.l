@@ -1,10 +1,14 @@
 %{
-//INCLUDE-DEFINE/////////////////////////////////////////////////////
+//INCLUDE////////////////////////////////////////////////////////////
 	#include <stdio.h>
 	#include <stdlib.h>
 	#include <conio.h>
 	//#include "y.tab.h"
 	#include <string.h>
+
+//DEFINE/////////////////////////////////////////////////////////////
+	#define CARACTER_NOMBRE "_"
+	#define NO_ENCONTRADO -1
 
 //ENUMS//////////////////////////////////////////////////////////////
 	enum token{
@@ -60,14 +64,26 @@
 	enum tipoDato{
 		tipoEntero,
 		tipoReal,
-		tipoCadena
+		tipoCadena,
+		sinTipo
+	};
+
+	enum sectorTabla{
+		sectorVariables,
+		sectorConstantes
+	};
+
+	enum error{
+		errorEnteroFueraDeRango,
+		errorRealFueraDeRango,
+		errorCadenaDemasiadoLarga
 	};
 
 //ESTRUCTURAS////////////////////////////////////////////////////////
 	typedef struct{
-		char nombre[33];
-		char valor[33];
-		char tipo[33];
+		char nombre[100];
+		char valor[100];
+		char tipo[100];
 		int longitud;
 	} registro;
 
@@ -75,8 +91,10 @@
 	char* cortarCadena(char* ,int);
 	char* reemplazarCaracter(char const * const,  char const * const,  char const * const) ;
 	void grabarTablaDeSimbolos(int);
-	void insertarEnTablaConstante(tipoDato);
-	char* normalizar(tipoDato, char*);
+	void insertarEnTablaDeSimbolos(sectorTabla, tipoDato);
+	char* normalizar(char*);
+	int buscarEnTablaDeSimbolos(sectorTabla, char*);
+	void mensajeDeError(error,const char*);
 
 //VARIABLES GLOBALES/////////////////////////////////////////////////
 	unsigned long entero64bits;
@@ -139,10 +157,10 @@ CONST_REAL					([0-9]*\.[0-9]+)
 "READ"						{ printf("READ\n");return READ; }
 "FILTER"					{ printf("FILTER\n");return FILTER; }
 "_"							{ printf("GB\n");return GB;}
-{ID}						{ printf("ID\n");return ID;}
-{CONST_ENTERO}	  			{ printf("CONST_ENTERO\n");insertarEnTablaConstante(tipoEntero);return CONST_ENTERO;}
-{CONST_REAL}				{ printf("CONST_REAL\n");insertarEnTablaConstante(tipoReal);return CONST_REAL;}
-{CONST_CADENA}				{ printf("CONST_CADENA\n");insertarEnTablaConstante(tipoCadena);return CONST_CADENA;}
+{ID}						{ printf("ID\n");insertarEnTablaDeSimbolos(sectorVariables, sinTipo);return ID;}
+{CONST_ENTERO}	  			{ printf("CONST_ENTERO: %s\n",yytext);insertarEnTablaDeSimbolos(sectorConstantes, tipoEntero);return CONST_ENTERO;}
+{CONST_REAL}				{ printf("CONST_REAL: %s\n",yytext);insertarEnTablaDeSimbolos(sectorConstantes, tipoReal);return CONST_REAL;}
+{CONST_CADENA}				{ printf("CONST_CADENA: %s\n",yytext);insertarEnTablaDeSimbolos(sectorConstantes, tipoCadena);return CONST_CADENA;}
 {COMENTARIO}				{ printf("COMENTARIO\n");return COMENTARIO;}
 "\n"
 "\r\n"
@@ -215,7 +233,7 @@ void grabarTablaDeSimbolos(int error){
 	}
 	fprintf(pf,"%-32s|\t%-32s|\t%-32s|\t%-32s\n","NOMBRE","TIPO","VALOR","LONGITUD");
 	for(i = 0; i<indiceVariable; i++){
-		fprintf(pf,"%-32s|\t%-32s|\t%-32s|\t%-32s\n",tablaVariables[i].nombre,tablaVariables[i].tipo,"----------","----------");
+		fprintf(pf,"%-32s|\t%-32s|\t%-32s|\t%-32s\n",tablaVariables[i].nombre,tablaVariables[i].tipo,"* variable *","----------");
 	}
 
 	for(i = 0; i<indiceConstante; i++){
@@ -229,52 +247,97 @@ void grabarTablaDeSimbolos(int error){
 	fclose(pf);
 }
 
-char* normalizar(tipoDato tipo, char* cadena){
-	cadena=reemplazarCaracter(cadena,".","p");
-	cadena=reemplazarCaracter(cadena,":","dp");
-	cadena=reemplazarCaracter(cadena,";","pc");
-	cadena=reemplazarCaracter(cadena,"-","m");
-	cadena=reemplazarCaracter(cadena," ","_");
-	cadena=reemplazarCaracter(cadena,"\"","");
+char* normalizar(char* cadena){
+	char *aux = (char *) malloc( sizeof(char) * (strlen(cadena)) + 2);;
+	strcpy(aux,CARACTER_NOMBRE);
+	strcat(aux,cadena);
+	aux=reemplazarCaracter(aux,",","c");
+	aux=reemplazarCaracter(aux,".","p");
+	aux=reemplazarCaracter(aux,":","d");
+	aux=reemplazarCaracter(aux,";","P");
+	aux=reemplazarCaracter(aux,"-","m");
+	aux=reemplazarCaracter(aux," ","_");
+	aux=reemplazarCaracter(aux,"\"","");
+	return aux;
 }
 
 
-void insertarEnTablaConstante(tipoDato type){
-	switch (type) {
-		case tipoReal:
-					if (atof(yytext)<0) {
-						printf("ERROR-CONSTANTE NEGATIVA : %s NUMERO DE LINEA %d", yytext, yylineno );
-						exit(1);
-					}
-					if (atof(yytext)>ENTERO_MAXIMO) {
-						printf("ERROR-CONSTANTE SUPERA MAXIMO : %s NUMERO DE LINEA %d", yytext, yylineno );
-						exit(1);
-					}
+void insertarEnTablaDeSimbolos(sectorTabla sector, tipoDato tipo){
+	if(buscarEnTablaDeSimbolos(sectorConstantes,yytext)!=NO_ENCONTRADO)
+		return;
+	switch(sector){
+		case sectorConstantes:
+			switch (tipo) {
+				case tipoReal:
+					if (atof(yytext)<0 || atof(yytext)>ENTERO_MAXIMO)
+						mensajeDeError(errorRealFueraDeRango,yytext);
 					strcpy(tablaConstantes[indiceConstante].valor,yytext);
 					strcpy(tablaConstantes[indiceConstante].tipo,"real");
 					tablaConstantes[indiceConstante].longitud=0;
-					strcpy(tablaConstantes[indiceConstante++].nombre,normalizar(tipoCadena,yytext));
+					strcpy(tablaConstantes[indiceConstante++].nombre,normalizar(yytext));
 					break;
-		case tipoCadena:
+
+				case tipoCadena:
+					yytext=reemplazarCaracter(yytext,"\"","");
 					strcpy(tablaConstantes[indiceConstante].valor,yytext);
 					strcpy(tablaConstantes[indiceConstante].tipo,"cadena");
 					tablaConstantes[indiceConstante].longitud=strlen(yytext);
-					strcpy(tablaConstantes[indiceConstante++].nombre,normalizar(tipoCadena,yytext));
+					strcpy(tablaConstantes[indiceConstante++].nombre,normalizar(yytext));
 					break;
-		case tipoEntero:
-					if (atoi(yytext)<0) {
-						printf("ERROR-CONSTANTE NEGATIVA : %s NUMERO DE LINEA %d", yytext, yylineno );
-						exit(1);
-					}
-					if (atoi(yytext)>ENTERO_MAXIMO) {
-						printf("ERROR-CONSTANTE SUPERA MAXIMO : %s NUMERO DE LINEA %d", yytext, yylineno );
-						exit(1);
-					}
+
+				case tipoEntero:
+					if (atoi(yytext)<0 || atoi(yytext)>ENTERO_MAXIMO)
+						mensajeDeError(errorEnteroFueraDeRango,yytext);
 					strcpy(tablaConstantes[indiceConstante].valor,yytext);
 					strcpy(tablaConstantes[indiceConstante].tipo,"entero");
 					tablaConstantes[indiceConstante].longitud=0;
-					strcpy(tablaConstantes[indiceConstante++].nombre,normalizar(tipoCadena,yytext));
+					strcpy(tablaConstantes[indiceConstante++].nombre,normalizar(yytext));
 					break;
-	}
+			}
+			break;
 
+		case sectorVariables:
+			yytext=reemplazarCaracter(yytext,"\"","");
+			strcpy(tablaVariables[indiceVariable].valor,"variable");
+			strcpy(tablaVariables[indiceVariable].tipo,"----------");
+			tablaVariables[indiceVariable].longitud=strlen(yytext);
+			strcpy(tablaVariables[indiceVariable++].nombre,normalizar(yytext));
+			break;
+			break;
+	}
 }
+
+int buscarEnTablaDeSimbolos(sectorTabla sector, char* objetivo){
+	objetivo=normalizar(objetivo);
+	switch(sector){
+		case sectorConstantes:
+				for(int i=0;i<indiceConstante;i++)
+					if(strcmp(tablaConstantes[i].nombre,objetivo)==0)
+						return i;
+				break;
+		case sectorVariables:
+				for(int i=0;i<indiceVariable;i++)
+					if(strcmp(tablaVariables[i].nombre,objetivo)==0)
+						return i;
+				break;
+	}
+	return NO_ENCONTRADO;
+}
+
+void mensajeDeError(error error,const char* info){
+	grabarTablaDeSimbolos(1);
+	printf("[Linea %d]: ",yylineno);
+	switch(error){ 
+        case errorEnteroFueraDeRango: 
+            printf("Entero %s fuera de rango [0 ; %d]\n",info,ENTERO_MAXIMO-1);
+            break ;
+		case errorRealFueraDeRango: 
+            printf("Real %s fuera de rango. Debe ser un real de 32bits\n",info);
+            break ;
+        case errorCadenaDemasiadoLarga:
+            printf("Cadena: \"%s\" fuera de rango. La longitud maxima es 30 caracteres\n", info);
+            break ; 
+      }
+       system ("Pause");
+	   exit (1);
+	 }
