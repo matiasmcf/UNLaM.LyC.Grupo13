@@ -57,6 +57,12 @@
 		TAM = 100
 	};
 
+	enum tipoDato{
+		tipoEntero,
+		tipoReal,
+		tipoCadena
+	};
+
 //ESTRUCTURAS////////////////////////////////////////////////////////
 	typedef struct{
 		char nombre[33];
@@ -66,9 +72,11 @@
 	} registro;
 
 //DEFINICIONES DE FUNCIONES//////////////////////////////////////////
-	char * cortarCadena(char* ,int);
-	char * replace(char const * const,  char const * const,  char const * const) ;
+	char* cortarCadena(char* ,int);
+	char* reemplazarCaracter(char const * const,  char const * const,  char const * const) ;
 	void grabarTablaDeSimbolos(int);
+	void insertarEnTabla(tipoDato);
+	char* normalizar(tipoDato, char*);
 
 //VARIABLES GLOBALES/////////////////////////////////////////////////
 	unsigned long entero64bits;
@@ -134,7 +142,7 @@ CONST_REAL					([0-9]*\.[0-9]+)
 {ID}						{ printf("ID\n");return ID;}				
 {CONST_ENTERO}	  			{ printf("CONST_ENTERO\n");return CONST_ENTERO;}
 {CONST_REAL}				{ printf("CONST_REAL\n");return CONST_REAL;}
-{CONST_CADENA}				{ printf("CONST_CADENA\n");return CONST_CADENA;}
+{CONST_CADENA}				{ printf("CONST_CADENA\n");printf("NOMBRE ES: %s\n", normalizar(tipoCadena,yytext));;return CONST_CADENA;}
 {COMENTARIO}				{ printf("COMENTARIO\n");return COMENTARIO;}
 "\n"
 "\r\n"
@@ -145,7 +153,7 @@ CONST_REAL					([0-9]*\.[0-9]+)
 %%	
 
 
-char * replace(char const * const original,  char const * const pattern,  char const * const replacement) 
+char * reemplazarCaracter(char const * const original,  char const * const pattern,  char const * const replacement) 
 {
 	size_t const replen = strlen(replacement);
 	size_t const patlen = strlen(pattern);
@@ -218,4 +226,12 @@ void grabarTablaDeSimbolos(int error){
 	if(error==1)
 		fprintf(pf,"TABLA INCOMPLETA (ERROR DE COMPILACION)\n");
 	fclose(pf);
+}
+
+char* normalizar(tipoDato tipo, char* cadena){
+	cadena=reemplazarCaracter(cadena,".","p");
+	cadena=reemplazarCaracter(cadena,":","dp");
+	cadena=reemplazarCaracter(cadena,";","pc");
+	cadena=reemplazarCaracter(cadena,"-","m");
+	cadena=reemplazarCaracter(cadena," ","_");
 }
