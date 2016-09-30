@@ -191,7 +191,9 @@ void grabarTablaDeSimbolos(int error){
 	fprintf(pf,"%-32s|\t%-15s|\t%-32s|\t%-13s|\t%-13s\n\n","NOMBRE","TIPO","VALOR","LONGITUD","LIMITE");
 	for(i = 0; i<indiceVariable; i++){
 		if(tablaVariables[i].limite!=0)
+			fprintf(pf,"%-32s|\t%-15s|\t%-32s|\t%-13s|\t%-13d\n",tablaVariables[i].nombre,tablaVariables[i].tipo,"----------------------------","----------",tablaVariables[i].limite);
 		else
+			fprintf(pf,"%-32s|\t%-15s|\t%-32s|\t%-13s|\t%-13s\n",tablaVariables[i].nombre,tablaVariables[i].tipo,"----------------------------","----------","----------");
 	}
 
 	for(i = 0; i<indiceConstante; i++){
@@ -263,6 +265,7 @@ void insertarEnTablaDeSimbolos(enum sectorTabla sector, enum tipoDato tipo){
 			if(buscarEnTablaDeSimbolos(sectorVariables,yytext)!=NO_ENCONTRADO)
 				return;
 			yytext=reemplazarCaracter(yytext,"\"","");
+			strcpy(tablaVariables[indiceVariable].valor,yytext);
 			strcpy(tablaVariables[indiceVariable].tipo,SIN_ASIGNAR);
 			tablaVariables[indiceVariable].longitud=strlen(yytext);
 			tablaConstantes[indiceConstante].limite=0;
