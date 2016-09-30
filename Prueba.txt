@@ -12,4 +12,28 @@ programa
 	c= AVG([2,a+b,c*(d+e),48])
 	asd[2]=5
 	abc[3]={4,AVG([2,a+b,c*(d+e),48]),3}
+	a=10
+	-/a=1000000000000000000000000000000000000/-
+	b=20
+	c="cadena"
+	-/c="cadenaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"/-
+	d=" de prueba"
+	-/d=30/-
+	e=2
+	-/f=30/-
+	-/Esto es un -/comentario anidado/-/-
+	if(a<b and b==20)
+		if(a==0)
+			WRITE "a es igual a cero"
+		else
+			WRITE "a es distinto de cero"
+		endif
+	endif
+	c=c++d
+	WRITE c
+	WRITE "Ingrese un valor para e"
+	READ e
+	WRITE "Se ha leido: "
+	WRITE e
+	WRITE "Fin del programa"
 fin_programa
