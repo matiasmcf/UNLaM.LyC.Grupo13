@@ -8,7 +8,11 @@
 	#include <string.h>
 	#include <float.h>
 	#include <math.h>
-	//#include <graphics.h>
+
+	#define CARACTER_NOMBRE "_"
+	#define NO_ENCONTRADO -1
+	#define SIN_ASIGNAR "SinAsignar"
+
 ///////////////////// ENUMS ////////////////////////////////////////
 	enum tipoDeError{
 		ErrorSintactico,
@@ -26,15 +30,23 @@
 		ErrorRead,
 		ErrorConstanteDistintoTipo,
 		ErrorOperacionNoValida,
-		ErrorFloatFueraDeRango
+		ErrorFloatFueraDeRango,
+		ErrorMultipleTipo
 	};
 
-	enum tipoDeDato{
-		TipoEntero,
-		TipoReal,
-		TipoCadena,
-		SinTipo
+	enum sectorTabla{
+		sectorVariables,
+		sectorConstantes
 	};
+
+	enum tipoDato{
+		tipoEntero,
+		tipoReal,
+		tipoCadena,
+		tipoArray,
+		sinTipo
+	};
+
 
 	enum valorMaximo{
 		ENTERO_MAXIMO = 32768,
@@ -48,6 +60,7 @@
 		char valor[100];
 		char tipo[100];
 		int longitud;
+		int limite;
 	} registro;
 
 ///////////////////// DECLARACION DE FUNCIONES /////////////////////
@@ -65,25 +78,28 @@
 	FILE  *yyin;
 	char *yyltext;
 	char *yytext;
-	//
 	unsigned long entero64bits;
-%}
+	int indicesParaAsignarTipo[TAM];
+	int contadorListaVar;
 
-%union {
-	int entero;
-	double real;
-	char cadena[50];
-}
+	%}
 
-////////////////////////////////////TOKENS//////////////////////////
+	%union {
+		int entero;
+		double real;
+		char cadena[50];
+	}
+
+///////////////////// TOKENS////////////////////////////////////////
 	//TOKEN TIPOS DE DATO
 	%token <cadena>ID
 	%token <cadena>CADENA
-	%token <entero>ENTERO
-	%token <real>REAL
+	%token <cadena>ENTERO
+	%token <cadena>REAL
+	%token ARRAY
 	
 	//TOKEN SIMBOLOS
-	%token COMILLA COMA C_A C_C  P_C P_A GB
+	%token COMILLA COMA C_A C_C  P_C P_A GB DOS_PUNTOS LLAVE_ABIERTA LLAVE_CERRADA
 	
 	//TOKEN OPERANDOS
 	%token OP_CONCAT
@@ -95,7 +111,7 @@
 	%token CONST_REAL CONST_CADENA CONST_ENTERO
 	
 	//TOKEN PALABRAS RESERVADAS
-	%token PROGRAMA FIN_PROGRAMA DECLARACIONES FIN_DECLARACIONES DIM AS IF ELSE THEN ENDIF REPEAT WRITE READ
+	%token PROGRAMA FIN_PROGRAMA DECLARACIONES FIN_DECLARACIONES DIM AS IF ELSE THEN ENDIF REPEAT WRITE READ AVG
 	
 %%
 
@@ -108,60 +124,113 @@ bloque_declaraciones:
 	;
 	
 declaraciones:         	        	
-		declaracion
-		| declaraciones declaracion
-		;
+	declaracion
+	|declaraciones declaracion
+	;
 
 declaracion:  
-		DIM C_A lista_var C_C AS C_A lista_tipo C_C 
-		;
+	{contadorListaVar=0;}
+	lista_var DOS_PUNTOS tipo
+	;
+
+tipo: 
+	REAL 	
+	{
+		int i;
+		for(i=0;i<contadorListaVar;i++){
+			if(strcmp(tablaVariables[indicesParaAsignarTipo[i]].tipo,SIN_ASIGNAR)==0)
+				strcpy(tablaVariables[indicesParaAsignarTipo[i]].tipo,"real");
+			else
+				yyerrormsj(tablaVariables[indicesParaAsignarTipo[i]].valor,ErrorSintactico,ErrorMultipleTipo);
+		}
+		printf("Declaradas %d var real/s\n",contadorListaVar);
+	}
+	|CADENA 
+	{
+		int i;
+		for(i=0;i<contadorListaVar;i++){
+			if(strcmp(tablaVariables[indicesParaAsignarTipo[i]].tipo,SIN_ASIGNAR)==0)
+				strcpy(tablaVariables[indicesParaAsignarTipo[i]].tipo,"cadena");
+			else
+				yyerrormsj(tablaVariables[indicesParaAsignarTipo[i]].valor,ErrorSintactico,ErrorMultipleTipo);
+		}
+		printf("Declaradas %d var cadena/s\n",contadorListaVar);
+	}
+	|ENTERO 
+	{
+		int i;
+		for(i=0;i<contadorListaVar;i++){
+			if(strcmp(tablaVariables[indicesParaAsignarTipo[i]].tipo,SIN_ASIGNAR)==0)
+				strcpy(tablaVariables[indicesParaAsignarTipo[i]].tipo,"entero");
+			else
+				yyerrormsj(tablaVariables[indicesParaAsignarTipo[i]].valor,ErrorSintactico,ErrorMultipleTipo);
+		}
+		printf("Declaradas %d var entera/s\n",contadorListaVar);
+	}
+	|ARRAY 	
+	{
+		int i;
+		for(i=0;i<contadorListaVar;i++){
+			if(strcmp(tablaVariables[indicesParaAsignarTipo[i]].tipo,SIN_ASIGNAR)==0)
+				strcpy(tablaVariables[indicesParaAsignarTipo[i]].tipo,"array");
+			else
+				yyerrormsj(tablaVariables[indicesParaAsignarTipo[i]].valor,ErrorSintactico,ErrorMultipleTipo);
+		}
+		printf("Declaradas %d var array/s\n",contadorListaVar);
+	}
+	;
 	 
 lista_var:
-		ID
-		| ID COMA lista_var 
+	var 
+	|var COMA lista_var 
  	 ;
-	 
-tipo: 
-		ENTERO
-		| REAL
-		| CADENA
-		 ;
 
-lista_tipo : 
-		tipo
-		| tipo COMA lista_tipo
-		;
+var:
+	ID 
+	{
+		int posicion=buscarEnTablaDeSimbolos(sectorVariables,yylval.cadena);
+		indicesParaAsignarTipo[contadorListaVar++]=posicion;
+	}
+	|ID 
+	{
+		int posicion=buscarEnTablaDeSimbolos(sectorVariables,yylval.cadena);
+		indicesParaAsignarTipo[contadorListaVar++]=posicion;
+	}
+	P_A CONST_ENTERO 
+	{
+		tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>3)].limite=atoi($<cadena>4);
+	} P_C
+	;
 
 bloque_sentencias: 
-		sentencia
-		|  bloque_sentencias sentencia
-		;
+	sentencia
+	|bloque_sentencias sentencia
+	;
 
 sentencia: 
-		write
-		| read
-		| asignacion 		
-		| sentencia_if
-		;
+	write
+	|read
+	|asignacion		
+	|sentencia_if
+	;
 
 sentencia_if: 
 	IF P_A condicion P_C bloque_if ENDIF
 	;
 
 bloque_if:
- bloque_sentencias 
- |bloque_sentencias ELSE bloque_sentencias 
+ 	bloque_sentencias 
+ 	|bloque_sentencias ELSE bloque_sentencias 
  	;
-
 
 comparacion : expresion COMPARADOR expresion  
 	;
 
 condicion:
-		comparacion 
-		| OP_NOT comparacion 
-		| comparacion and_or comparacion
-		;
+	comparacion 
+	|OP_NOT comparacion 
+	|comparacion and_or comparacion
+	;
 
 write:  
 	WRITE CONST_CADENA
@@ -179,28 +248,38 @@ and_or:
 
 asignacion: 
 	ID OP_ASIG expresion
+	|ID C_A CONST_ENTERO C_C OP_ASIG expresion
+	|ID C_A CONST_ENTERO C_C OP_ASIG LLAVE_ABIERTA expresiones LLAVE_CERRADA
 	;
 
 expresion:
-     termino
-	 |expresion OP_RESTA termino
-     |expresion OP_SUMA termino
-	 |expresion OP_CONCAT termino
- 	 ;
+    termino
+	|expresion OP_RESTA termino
+    |expresion OP_SUMA termino
+	|expresion OP_CONCAT termino
+ 	;
 
 termino: 
-       factor
-       |termino OP_MUL factor
-       |termino OP_DIV factor
-	   ;
+    factor
+    |termino OP_MUL factor
+    |termino OP_DIV factor
+	;
 
 factor:
-      ID 
-      | CONST_ENTERO 
-      | CONST_REAL
-	  | CONST_CADENA
-      | P_A expresion P_C
+    ID 
+    | CONST_ENTERO 
+    | CONST_REAL
+	| CONST_CADENA
+    | P_A expresion P_C
+    | average
     ;
+
+average:
+	AVG P_A C_A expresiones C_C P_C
+
+expresiones:
+	expresion
+	| expresiones COMA expresion
 
 %%
 
@@ -218,7 +297,7 @@ int main(int argc,char *argv[])
 	}
 	fclose(yyin);
 	grabarTablaDeSimbolos(0);
-	printf("\n* COMPILACION EXITOSA* \n");
+	printf("\n* COMPILACION EXITOSA *\n");
 	return 0;
 }
 
@@ -263,6 +342,9 @@ int yyerrormsj(const char * info,enum tipoDeError tipoDeError ,enum error error)
 			printf("Descripcion: Error AllEqual: %s\n",info);
 			break;
 		case ErrorOperacionNoValida:
+			break;
+		case ErrorMultipleTipo:
+			printf("Descripcion: el id '%s' ya tiene un tipo asignado\n",info);
 			break;
       }
 

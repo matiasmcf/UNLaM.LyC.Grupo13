@@ -1,10 +1,15 @@
 programa 
 	DECVAR	
-		DIM [a,b,c,d,e] AS [entero,entero,cadena,cadena,entero]
+		asd(4), abc(3): array
+		a: entero
+		b,c: cadena
+		d: real
 	ENDEC
 
 	WRITE "Inicio del programa"
 	a=10
 	b=2.2
-	c=10
+	c= AVG([2,a+b,c*(d+e),48])
+	asd[2]=5
+	abc[3]={4,AVG([2,a+b,c*(d+e),48]),3}
 fin_programa

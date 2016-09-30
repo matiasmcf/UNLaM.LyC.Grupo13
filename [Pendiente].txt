@@ -1,6 +1,9 @@
 En léxico:
-	• Agregar/modificar los token necesarios para los temas especiales.
 	• Validar rango de los numeros reales de 32 bits.
-
+	
 En sintáctico:
 	• Organizar la gramática.
+	• Validar limites de vectores.
+	• Realizar acciones semanticas para la notacion intermedia.
+	• Validacion de tipo en asignaciones y demas operaciones.
+	• Gramatica/Sintaxis de la funcion REPEAT.
