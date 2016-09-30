@@ -1,17 +1,18 @@
 programa 
 	DECVAR	
-		asd(4), abc(3): array
+		asd(4), abc(5): array
 		a: entero
 		b,c: cadena
-		d: real
+		d,e: real
 	ENDEC
 
 	WRITE "Inicio del programa"
 	a=10
 	b=2.2
 	c= AVG([2,a+b,c*(d+e),48])
-	asd[2]=5
-	abc[3]={4,AVG([2,a+b,c*(d+e),48]),3}
+	asd[2]=5+4*(2-1)
+	abc[3]={4,AVG([2,a+b,c*(d+4)-7,48]),asd[2]}
+	asd[b]=asd[a]+1
 	a=10
 	-/a=1000000000000000000000000000000000000/-
 	b=20

@@ -3,7 +3,7 @@ En léxico:
 	
 En sintáctico:
 	• Organizar la gramática.
-	• Validar limites de vectores.
+	• Agregar validación al acceder a los vectores por medio de variables: vec[varA]
 	• Realizar acciones semanticas para la notacion intermedia.
 	• Validacion de tipo en asignaciones y demas operaciones.
 	• Gramatica/Sintaxis de la funcion REPEAT.

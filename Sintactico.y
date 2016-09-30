@@ -31,7 +31,9 @@
 		ErrorConstanteDistintoTipo,
 		ErrorOperacionNoValida,
 		ErrorFloatFueraDeRango,
-		ErrorMultipleTipo
+		ErrorMultipleTipo,
+		ErrorArraySinTipo,
+		ErrorArrayFueraDeRango
 	};
 
 	enum sectorTabla{
@@ -64,7 +66,7 @@
 	} registro;
 
 ///////////////////// DECLARACION DE FUNCIONES /////////////////////
-	int yyerrormsj(const char *,enum tipoDeError,enum error);
+	int yyerrormsj(const char *,enum tipoDeError,enum error, const char*);
 	int yyerror();
 
 ///////////////////// DECLARACION DE VARIABLES GLOBALES //////////// 
@@ -130,7 +132,7 @@ declaraciones:
 
 declaracion:  
 	{contadorListaVar=0;}
-	lista_var DOS_PUNTOS tipo
+	lista_var_dec DOS_PUNTOS tipo
 	;
 
 tipo: 
@@ -141,7 +143,7 @@ tipo:
 			if(strcmp(tablaVariables[indicesParaAsignarTipo[i]].tipo,SIN_ASIGNAR)==0)
 				strcpy(tablaVariables[indicesParaAsignarTipo[i]].tipo,"real");
 			else
-				yyerrormsj(tablaVariables[indicesParaAsignarTipo[i]].valor,ErrorSintactico,ErrorMultipleTipo);
+				yyerrormsj(tablaVariables[indicesParaAsignarTipo[i]].valor,ErrorSintactico,ErrorMultipleTipo,"");
 		}
 		printf("Declaradas %d var real/s\n",contadorListaVar);
 	}
@@ -152,7 +154,7 @@ tipo:
 			if(strcmp(tablaVariables[indicesParaAsignarTipo[i]].tipo,SIN_ASIGNAR)==0)
 				strcpy(tablaVariables[indicesParaAsignarTipo[i]].tipo,"cadena");
 			else
-				yyerrormsj(tablaVariables[indicesParaAsignarTipo[i]].valor,ErrorSintactico,ErrorMultipleTipo);
+				yyerrormsj(tablaVariables[indicesParaAsignarTipo[i]].valor,ErrorSintactico,ErrorMultipleTipo,"");
 		}
 		printf("Declaradas %d var cadena/s\n",contadorListaVar);
 	}
@@ -163,7 +165,7 @@ tipo:
 			if(strcmp(tablaVariables[indicesParaAsignarTipo[i]].tipo,SIN_ASIGNAR)==0)
 				strcpy(tablaVariables[indicesParaAsignarTipo[i]].tipo,"entero");
 			else
-				yyerrormsj(tablaVariables[indicesParaAsignarTipo[i]].valor,ErrorSintactico,ErrorMultipleTipo);
+				yyerrormsj(tablaVariables[indicesParaAsignarTipo[i]].valor,ErrorSintactico,ErrorMultipleTipo,"");
 		}
 		printf("Declaradas %d var entera/s\n",contadorListaVar);
 	}
@@ -174,18 +176,18 @@ tipo:
 			if(strcmp(tablaVariables[indicesParaAsignarTipo[i]].tipo,SIN_ASIGNAR)==0)
 				strcpy(tablaVariables[indicesParaAsignarTipo[i]].tipo,"array");
 			else
-				yyerrormsj(tablaVariables[indicesParaAsignarTipo[i]].valor,ErrorSintactico,ErrorMultipleTipo);
+				yyerrormsj(tablaVariables[indicesParaAsignarTipo[i]].valor,ErrorSintactico,ErrorMultipleTipo,"");
 		}
 		printf("Declaradas %d var array/s\n",contadorListaVar);
 	}
 	;
 	 
-lista_var:
-	var 
-	|var COMA lista_var 
+lista_var_dec:
+	var_dec 
+	|var_dec COMA lista_var_dec 
  	 ;
 
-var:
+var_dec:
 	ID 
 	{
 		int posicion=buscarEnTablaDeSimbolos(sectorVariables,yylval.cadena);
@@ -210,7 +212,8 @@ bloque_sentencias:
 sentencia: 
 	write
 	|read
-	|asignacion		
+	|asignacion
+	|asignacion_vector	
 	|sentencia_if
 	;
 
@@ -248,8 +251,11 @@ and_or:
 
 asignacion: 
 	ID OP_ASIG expresion
-	|ID C_A CONST_ENTERO C_C OP_ASIG expresion
-	|ID C_A CONST_ENTERO C_C OP_ASIG LLAVE_ABIERTA expresiones LLAVE_CERRADA
+	;
+
+asignacion_vector: 
+	vector OP_ASIG expresion
+	|vector OP_ASIG LLAVE_ABIERTA expresiones LLAVE_CERRADA
 	;
 
 expresion:
@@ -266,12 +272,26 @@ termino:
 	;
 
 factor:
-    ID 
+    ID
+    | vector
     | CONST_ENTERO 
     | CONST_REAL
 	| CONST_CADENA
     | P_A expresion P_C
     | average
+    ;
+
+vector:
+    ID C_A ID C_C
+    | ID C_A CONST_ENTERO C_C
+    {
+    	if(strcmp(tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>1)].tipo,SIN_ASIGNAR)==0){
+    		yyerrormsj($<cadena>1,ErrorSintactico,ErrorArraySinTipo,"");
+    	}
+    	if(atoi($<cadena>3)<=0 || atoi($<cadena>3)>(tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>1)].limite)){
+    		yyerrormsj($<cadena>1,ErrorSintactico,ErrorArrayFueraDeRango,$<cadena>3);
+    	}
+    }
     ;
 
 average:
@@ -303,7 +323,7 @@ int main(int argc,char *argv[])
 
 /////////////////////////////////////DEFINICION  DE FUNCIONES///////////////////////////////////////////////////
 
-int yyerrormsj(const char * info,enum tipoDeError tipoDeError ,enum error error)
+int yyerrormsj(const char * info,enum tipoDeError tipoDeError ,enum error error, const char *infoAdicional)
      {
 		 grabarTablaDeSimbolos(1);
 		printf("Linea: %d. ",yylineno);
@@ -345,6 +365,12 @@ int yyerrormsj(const char * info,enum tipoDeError tipoDeError ,enum error error)
 			break;
 		case ErrorMultipleTipo:
 			printf("Descripcion: el id '%s' ya tiene un tipo asignado\n",info);
+			break;
+		case ErrorArraySinTipo:
+			printf("Descripcion: el id '%s' NO tiene un tipo asignado\n",info);
+			break;
+		case ErrorArrayFueraDeRango:
+			printf("Descripcion: vector '%s(0..%d)' fuera de rango. Se intenta acceder a '%s[%s]'\n",info,(tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,info)].limite),info,infoAdicional);
 			break;
       }
 
