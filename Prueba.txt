@@ -23,13 +23,21 @@ programa
 	e=2
 	-/f=30/-
 	-/Esto es un -/comentario anidado/-/-
-	if(a<b and b==20)
-		if(a==0)
-			WRITE "a es igual a cero"
-		else
-			WRITE "a es distinto de cero"
+	a=0
+	repeat
+		if(a<b and b==20)
+			if(a==0)
+				WRITE "a es igual a cero"
+			else
+				b=9
+				repeat
+					WRITE "a es distinto de cero"
+					b=b-1
+				while(b>4)
+			endif
 		endif
-	endif
+		a=a+1
+	while(a<15)
 	c=c++d
 	WRITE c
 	WRITE "Ingrese un valor para e"

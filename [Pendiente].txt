@@ -1,9 +1,9 @@
 En léxico:
-	• Validar rango de los numeros reales de 32 bits.
+	• Validar rango de los numeros reales de 32 bits
 	
 En sintáctico:
-	• Organizar la gramática.
+	• Organizar la gramática
 	• Agregar validación al acceder a los vectores por medio de variables: vec[varA]
-	• Realizar acciones semanticas para la notacion intermedia.
-	• Validacion de tipo en asignaciones y demas operaciones.
-	• Gramatica/Sintaxis de la funcion REPEAT.
+	• Realizar acciones semanticas para la notacion intermedia
+	• Validacion de tipo en asignaciones y demas operaciones
+	• Validar cantidad de expresiones en asignacion_vector

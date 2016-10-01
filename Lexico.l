@@ -117,7 +117,8 @@ CONST_REAL					([0-9]*\.[0-9]+)
 "endif"						{ guardarToken("ENDIF\n");return ENDIF;}
 "WRITE"						{ guardarToken("WRITE\n");return WRITE; }
 "READ"						{ guardarToken("READ\n");return READ; }
-"REPEAT"					{ guardarToken("REPEAT\n");return REPEAT; }
+"repeat"					{ guardarToken("REPEAT\n");return REPEAT;}
+"while"						{ guardarToken("WHILE\n");return WHILE;}
 "array"				 		{ guardarToken("ARRAY\n");return ARRAY; }
 "_"							{ guardarToken("GB\n");return GB;}
 "{"							{ guardarToken("LLAVE_ABIERTA\n");return LLAVE_ABIERTA;}

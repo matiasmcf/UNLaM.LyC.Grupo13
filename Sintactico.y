@@ -33,7 +33,8 @@
 		ErrorFloatFueraDeRango,
 		ErrorMultipleTipo,
 		ErrorArraySinTipo,
-		ErrorArrayFueraDeRango
+		ErrorArrayFueraDeRango,
+		ErrorLimiteArrayNoPermitido
 	};
 
 	enum sectorTabla{
@@ -113,16 +114,16 @@
 	%token CONST_REAL CONST_CADENA CONST_ENTERO
 	
 	//TOKEN PALABRAS RESERVADAS
-	%token PROGRAMA FIN_PROGRAMA DECLARACIONES FIN_DECLARACIONES DIM AS IF ELSE THEN ENDIF REPEAT WRITE READ AVG
+	%token PROGRAMA FIN_PROGRAMA DECLARACIONES FIN_DECLARACIONES DIM AS IF ELSE THEN ENDIF REPEAT WHILE WRITE READ AVG
 	
 %%
 
 programa:  	   
-	PROGRAMA bloque_declaraciones bloque_sentencias FIN_PROGRAMA
+	PROGRAMA {printf("INICIO DEL PROGRAMA\n");}bloque_declaraciones bloque_sentencias FIN_PROGRAMA {printf("FIN DEL PROGRAMA\n");}
 	;
 
 bloque_declaraciones:
-	DECLARACIONES declaraciones FIN_DECLARACIONES
+	DECLARACIONES {printf("DECLARACIONES\n");}declaraciones FIN_DECLARACIONES {printf("FIN_DECLARACIONES\n");}
 	;
 	
 declaraciones:         	        	
@@ -145,7 +146,7 @@ tipo:
 			else
 				yyerrormsj(tablaVariables[indicesParaAsignarTipo[i]].valor,ErrorSintactico,ErrorMultipleTipo,"");
 		}
-		printf("Declaradas %d var real/s\n",contadorListaVar);
+		printf("  Declaradas %d var real/es\n",contadorListaVar);
 	}
 	|CADENA 
 	{
@@ -156,7 +157,7 @@ tipo:
 			else
 				yyerrormsj(tablaVariables[indicesParaAsignarTipo[i]].valor,ErrorSintactico,ErrorMultipleTipo,"");
 		}
-		printf("Declaradas %d var cadena/s\n",contadorListaVar);
+		printf("  Declaradas %d var cadena/s\n",contadorListaVar);
 	}
 	|ENTERO 
 	{
@@ -167,7 +168,7 @@ tipo:
 			else
 				yyerrormsj(tablaVariables[indicesParaAsignarTipo[i]].valor,ErrorSintactico,ErrorMultipleTipo,"");
 		}
-		printf("Declaradas %d var entera/s\n",contadorListaVar);
+		printf("  Declaradas %d var entera/s\n",contadorListaVar);
 	}
 	|ARRAY 	
 	{
@@ -178,7 +179,7 @@ tipo:
 			else
 				yyerrormsj(tablaVariables[indicesParaAsignarTipo[i]].valor,ErrorSintactico,ErrorMultipleTipo,"");
 		}
-		printf("Declaradas %d var array/s\n",contadorListaVar);
+		printf("  Declaradas %d var array/s\n",contadorListaVar);
 	}
 	;
 	 
@@ -200,6 +201,8 @@ var_dec:
 	}
 	P_A CONST_ENTERO 
 	{
+		if(atoi($<cadena>4)<=0)
+			yyerrormsj($<cadena>3,ErrorSintactico,ErrorLimiteArrayNoPermitido,$<cadena>4);
 		tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>3)].limite=atoi($<cadena>4);
 	} P_C
 	;
@@ -215,15 +218,20 @@ sentencia:
 	|asignacion
 	|asignacion_vector	
 	|sentencia_if
+	|sentencia_repeat
+	;
+
+sentencia_repeat: 
+	REPEAT {printf("INICIO REPEAT\n");}bloque_sentencias WHILE  P_A condicion{printf("CONDICION\n");} P_C {printf("FIN REPEAT\n");}
 	;
 
 sentencia_if: 
-	IF P_A condicion P_C bloque_if ENDIF
+	IF {printf("IF\n");}P_A condicion P_C bloque_if ENDIF{printf("ENDIF\n");}
 	;
 
 bloque_if:
  	bloque_sentencias 
- 	|bloque_sentencias ELSE bloque_sentencias 
+ 	|bloque_sentencias ELSE {printf("ELSE\n");}bloque_sentencias 
  	;
 
 comparacion : expresion COMPARADOR expresion  
@@ -236,12 +244,12 @@ condicion:
 	;
 
 write:  
-	WRITE CONST_CADENA
-	|WRITE ID 
+	WRITE CONST_CADENA {printf("WRITE CONSTANTE\n");}
+	|WRITE ID {printf("WRITE VARIABLE\n");}
 	;
 
 read:
-	READ ID	
+	READ ID	{printf("READ VARIABLE\n");}
 	;
 
 and_or:
@@ -250,34 +258,34 @@ and_or:
 	;
 
 asignacion: 
-	ID OP_ASIG expresion
+	ID {printf("ASIGNACION\n");}OP_ASIG expresion 
 	;
 
 asignacion_vector: 
-	vector OP_ASIG expresion
-	|vector OP_ASIG LLAVE_ABIERTA expresiones LLAVE_CERRADA
+	vector OP_ASIG {printf("ASIGNACION VECTOR\n");} expresion 
+	|vector OP_ASIG {printf("ASIGNACION VECTOR MULTIPLE\n");} LLAVE_ABIERTA expresiones LLAVE_CERRADA 
 	;
 
 expresion:
     termino
-	|expresion OP_RESTA termino
-    |expresion OP_SUMA termino
-	|expresion OP_CONCAT termino
+	|expresion OP_RESTA{printf("RESTA\n");} termino
+    |expresion OP_SUMA {printf("SUMA\n");}termino
+	|expresion OP_CONCAT{printf("CONCATENACION\n");} termino
  	;
 
 termino: 
     factor
-    |termino OP_MUL factor
-    |termino OP_DIV factor
+    |termino OP_MUL {printf("MULTIPLICACION\n");}factor
+    |termino OP_DIV {printf("DIVISION\n");}factor
 	;
 
 factor:
-    ID
-    | vector
-    | CONST_ENTERO 
-    | CONST_REAL
-	| CONST_CADENA
-    | P_A expresion P_C
+    ID {printf("ID\n");}
+    | vector {printf("VECTOR\n");}
+    | CONST_ENTERO {printf("CONST_ENTERO\n");} 
+    | CONST_REAL {printf("CONST_REAL\n");}
+	| CONST_CADENA {printf("CONST_CADENA\n");}
+    | P_A expresion P_C 
     | average
     ;
 
@@ -295,7 +303,7 @@ vector:
     ;
 
 average:
-	AVG P_A C_A expresiones C_C P_C
+	AVG {printf("AVERAGE\n");}P_A C_A expresiones C_C P_C
 
 expresiones:
 	expresion
@@ -371,6 +379,9 @@ int yyerrormsj(const char * info,enum tipoDeError tipoDeError ,enum error error,
 			break;
 		case ErrorArrayFueraDeRango:
 			printf("Descripcion: vector '%s(0..%d)' fuera de rango. Se intenta acceder a '%s[%s]'\n",info,(tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,info)].limite),info,infoAdicional);
+			break;
+		case ErrorLimiteArrayNoPermitido:
+			printf("Descripcion: el vector %s (%s) no tiene un limite valido, debe ser mayor a 0\n",info, infoAdicional);
 			break;
       }
 
