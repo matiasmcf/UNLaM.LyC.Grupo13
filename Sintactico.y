@@ -6,40 +6,16 @@
 	#include <conio.h>
 	#include "y.tab.h"
 	#include <string.h>
-	#include <float.h>
-	#include <math.h>
 
 	#define CARACTER_NOMBRE "_"
 	#define NO_ENCONTRADO -1
 	#define SIN_ASIGNAR "SinAsignar"
 
 ///////////////////// ENUMS ////////////////////////////////////////
-	enum tipoDeError{
-		ErrorSintactico,
-		ErrorLexico
-	};
-
-	enum error{
-		ErrorIntFueraDeRango,
-		ErrorStringFueraDeRango,
-		ErrorEnDeclaracionCantidad,
-		ErrorIdRepetida,
-		ErrorIdNoDeclarado,
-		ErrorIdDistintoTipo,
-		ErrorAllEqual,
-		ErrorRead,
-		ErrorConstanteDistintoTipo,
-		ErrorOperacionNoValida,
-		ErrorFloatFueraDeRango,
-		ErrorMultipleTipo,
-		ErrorArraySinTipo,
-		ErrorArrayFueraDeRango,
-		ErrorLimiteArrayNoPermitido
-	};
-
-	enum sectorTabla{
-		sectorVariables,
-		sectorConstantes
+	enum valorMaximo{
+		ENTERO_MAXIMO = 32768,
+		CADENA_MAXIMA = 31,
+		TAM = 100
 	};
 
 	enum tipoDato{
@@ -50,18 +26,33 @@
 		sinTipo
 	};
 
+	enum sectorTabla{
+		sectorVariables,
+		sectorConstantes
+	};
 
-	enum valorMaximo{
-		ENTERO_MAXIMO = 32768,
-		CADENA_MAXIMA = 31,
-		TAM = 100
+	enum error{
+		ErrorIdRepetida,
+		ErrorIdNoDeclarado,
+		ErrorArraySinTipo,
+		ErrorArrayFueraDeRango,
+		ErrorLimiteArrayNoPermitido,
+		ErrorOperacionNoValida,
+		ErrorIdDistintoTipo,
+		ErrorConstanteDistintoTipo,
+		ErrorArrayAsignacionMultiple
+	};
+
+		enum tipoDeError{
+		ErrorSintactico,
+		ErrorLexico
 	};
 
 ///////////////////// ESTRUCUTURAS  ////////////////////////////////
 	typedef struct{
 		char nombre[100];
 		char valor[100];
-		char tipo[100];
+		enum tipoDato tipo;
 		int longitud;
 		int limite;
 	} registro;
@@ -81,9 +72,17 @@
 	FILE  *yyin;
 	char *yyltext;
 	char *yytext;
-	unsigned long entero64bits;
+	//
 	int indicesParaAsignarTipo[TAM];
-	int contadorListaVar;
+	enum tipoDato tipoAsignacion=sinTipo;
+	//Boolean
+	int esAsignacion=0;
+	int esAverage=0;
+	int esAsignacionVectorMultiple;
+	//Contadores
+	int contadorListaVar=0;
+	int contadorExpresionesVector=0;
+	int cantidadDeExpresionesEsperadasEnVector=0;
 
 	%}
 
@@ -140,46 +139,58 @@ tipo:
 	REAL 	
 	{
 		int i;
+		printf("  Declaradas: ");
 		for(i=0;i<contadorListaVar;i++){
-			if(strcmp(tablaVariables[indicesParaAsignarTipo[i]].tipo,SIN_ASIGNAR)==0)
-				strcpy(tablaVariables[indicesParaAsignarTipo[i]].tipo,"real");
+			if(tablaVariables[indicesParaAsignarTipo[i]].tipo==sinTipo){
+				printf("'%s' ",tablaVariables[indicesParaAsignarTipo[i]].valor);
+				tablaVariables[indicesParaAsignarTipo[i]].tipo=tipoReal;
+			}
 			else
-				yyerrormsj(tablaVariables[indicesParaAsignarTipo[i]].valor,ErrorSintactico,ErrorMultipleTipo,"");
+				yyerrormsj(tablaVariables[indicesParaAsignarTipo[i]].valor,ErrorSintactico,ErrorIdRepetida,"");
 		}
-		printf("  Declaradas %d var real/es\n",contadorListaVar);
+		printf("de tipo real\n");
 	}
 	|CADENA 
 	{
 		int i;
+		printf("  Declaradas: ");
 		for(i=0;i<contadorListaVar;i++){
-			if(strcmp(tablaVariables[indicesParaAsignarTipo[i]].tipo,SIN_ASIGNAR)==0)
-				strcpy(tablaVariables[indicesParaAsignarTipo[i]].tipo,"cadena");
+			if(tablaVariables[indicesParaAsignarTipo[i]].tipo==sinTipo){
+				printf("'%s' ",tablaVariables[indicesParaAsignarTipo[i]].valor);
+				tablaVariables[indicesParaAsignarTipo[i]].tipo=tipoCadena;
+			}
 			else
-				yyerrormsj(tablaVariables[indicesParaAsignarTipo[i]].valor,ErrorSintactico,ErrorMultipleTipo,"");
+				yyerrormsj(tablaVariables[indicesParaAsignarTipo[i]].valor,ErrorSintactico,ErrorIdRepetida,"");
 		}
-		printf("  Declaradas %d var cadena/s\n",contadorListaVar);
+		printf("de tipo cadena\n");
 	}
 	|ENTERO 
 	{
 		int i;
+		printf("  Declaradas: ");
 		for(i=0;i<contadorListaVar;i++){
-			if(strcmp(tablaVariables[indicesParaAsignarTipo[i]].tipo,SIN_ASIGNAR)==0)
-				strcpy(tablaVariables[indicesParaAsignarTipo[i]].tipo,"entero");
+			if(tablaVariables[indicesParaAsignarTipo[i]].tipo==sinTipo){
+				printf("'%s' ",tablaVariables[indicesParaAsignarTipo[i]].valor);
+				tablaVariables[indicesParaAsignarTipo[i]].tipo=tipoEntero;
+			}
 			else
-				yyerrormsj(tablaVariables[indicesParaAsignarTipo[i]].valor,ErrorSintactico,ErrorMultipleTipo,"");
+				yyerrormsj(tablaVariables[indicesParaAsignarTipo[i]].valor,ErrorSintactico,ErrorIdRepetida,"");
 		}
-		printf("  Declaradas %d var entera/s\n",contadorListaVar);
+		printf("de tipo entero\n");
 	}
 	|ARRAY 	
 	{
 		int i;
+		printf("  Declaradas: ");
 		for(i=0;i<contadorListaVar;i++){
-			if(strcmp(tablaVariables[indicesParaAsignarTipo[i]].tipo,SIN_ASIGNAR)==0)
-				strcpy(tablaVariables[indicesParaAsignarTipo[i]].tipo,"array");
+			if(tablaVariables[indicesParaAsignarTipo[i]].tipo==sinTipo){
+				printf("'%s' ",tablaVariables[indicesParaAsignarTipo[i]].valor);
+				tablaVariables[indicesParaAsignarTipo[i]].tipo=tipoArray;
+			}
 			else
-				yyerrormsj(tablaVariables[indicesParaAsignarTipo[i]].valor,ErrorSintactico,ErrorMultipleTipo,"");
+				yyerrormsj(tablaVariables[indicesParaAsignarTipo[i]].valor,ErrorSintactico,ErrorIdRepetida,"");
 		}
-		printf("  Declaradas %d var array/s\n",contadorListaVar);
+		printf("de tipo array\n");
 	}
 	;
 	 
@@ -245,11 +256,21 @@ condicion:
 
 write:  
 	WRITE CONST_CADENA {printf("WRITE CONSTANTE\n");}
-	|WRITE ID {printf("WRITE VARIABLE\n");}
+	|WRITE ID 
+	{
+		printf("WRITE VARIABLE\n");
+		if(tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>1)].tipo==sinTipo)
+			yyerrormsj($<cadena>1,ErrorSintactico,ErrorIdNoDeclarado,"");
+	}
 	;
 
 read:
-	READ ID	{printf("READ VARIABLE\n");}
+	READ ID	
+	{
+		printf("READ VARIABLE\n");
+		if(tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>1)].tipo==sinTipo)
+			yyerrormsj($<cadena>1,ErrorSintactico,ErrorIdNoDeclarado,"");
+	}
 	;
 
 and_or:
@@ -258,56 +279,149 @@ and_or:
 	;
 
 asignacion: 
-	ID {printf("ASIGNACION\n");}OP_ASIG expresion 
+	ID 
+	{
+		if(tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>1)].tipo==sinTipo)
+			yyerrormsj($<cadena>1,ErrorSintactico,ErrorIdNoDeclarado,"");
+		esAsignacion=1;
+		printf("ASIGNACION: %s\t", $<cadena>1);
+		tipoAsignacion=tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>1)].tipo;
+		printf("(tipo: %s)\n",obtenerTipo(sectorVariables,tipoAsignacion));
+	} OP_ASIG expresion {esAsignacion=0;tipoAsignacion=sinTipo;}
 	;
 
 asignacion_vector: 
-	vector OP_ASIG {printf("ASIGNACION VECTOR\n");} expresion 
-	|vector OP_ASIG {printf("ASIGNACION VECTOR MULTIPLE\n");} LLAVE_ABIERTA expresiones LLAVE_CERRADA 
+	vector OP_ASIG {printf("ASIGNACION VECTOR: %s\n", $<cadena>1);} expresion 
+	|vector OP_ASIG
+	{
+		printf("ASIGNACION VECTOR MULTIPLE: %s\n", $<cadena>1);
+		esAsignacionVectorMultiple=1;
+		contadorExpresionesVector=0;
+	} LLAVE_ABIERTA expresiones LLAVE_CERRADA 
+	{
+		if(contadorExpresionesVector!=cantidadDeExpresionesEsperadasEnVector)
+			yyerrormsj($<cadena>1,ErrorSintactico,ErrorArrayAsignacionMultiple,"");
+		esAsignacionVectorMultiple=0;
+		contadorExpresionesVector=0;
+		cantidadDeExpresionesEsperadasEnVector=0;
+	}
 	;
 
 expresion:
     termino
-	|expresion OP_RESTA{printf("RESTA\n");} termino
-    |expresion OP_SUMA {printf("SUMA\n");}termino
-	|expresion OP_CONCAT{printf("CONCATENACION\n");} termino
+	|expresion OP_RESTA 
+	{
+		printf("RESTA\n");
+		if(esAsignacion==1&&tipoAsignacion==tipoCadena)
+			yyerrormsj("resta", ErrorSintactico,ErrorOperacionNoValida,"");
+
+	} termino
+    |expresion OP_SUMA 
+    {
+    	if(esAsignacion==1&&tipoAsignacion==tipoCadena)
+			yyerrormsj("suma", ErrorSintactico,ErrorOperacionNoValida,"");
+    	printf("SUMA\n");
+    }termino
+	|expresion OP_CONCAT 
+	{
+		if(esAsignacion==1&&tipoAsignacion!=tipoCadena)
+			yyerrormsj("concatenacion", ErrorSintactico,ErrorOperacionNoValida,"");
+		printf("CONCATENACION\n");
+	} termino
  	;
 
 termino: 
     factor
-    |termino OP_MUL {printf("MULTIPLICACION\n");}factor
-    |termino OP_DIV {printf("DIVISION\n");}factor
+    |termino OP_MUL 
+    {
+    	printf("MULTIPLICACION\n");
+    	if(esAsignacion==1&&tipoAsignacion==tipoCadena)
+			yyerrormsj("multiplicacion", ErrorSintactico,ErrorOperacionNoValida,"");
+    } factor
+    |termino OP_DIV 
+    {
+    	printf("DIVISION\n");
+    	if(esAsignacion==1&&tipoAsignacion==tipoCadena)
+			yyerrormsj("division", ErrorSintactico,ErrorOperacionNoValida,"");
+    } factor
 	;
 
 factor:
-    ID {printf("ID\n");}
-    | vector {printf("VECTOR\n");}
-    | CONST_ENTERO {printf("CONST_ENTERO\n");} 
-    | CONST_REAL {printf("CONST_REAL\n");}
-	| CONST_CADENA {printf("CONST_CADENA\n");}
+    ID 
+    {
+    	if(tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>1)].tipo==sinTipo)
+			yyerrormsj($<cadena>1,ErrorSintactico,ErrorIdNoDeclarado,"");
+    	printf("ID: %s\n", $<cadena>1);
+    	if(esAverage==0)
+    		if(esAsignacion==1&& tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>1)].tipo!=tipoAsignacion)
+				yyerrormsj($<cadena>1, ErrorSintactico,ErrorIdDistintoTipo,"");
+    }
+    | vector 
+    {
+    	printf("VECTOR: %s\n", $<cadena>1);
+    	if(esAverage==0)
+    		if(esAsignacion==1&&tipoAsignacion!=tipoEntero)
+    			yyerrormsj($<cadena>1, ErrorSintactico,ErrorIdDistintoTipo,"");
+    }
+    | CONST_ENTERO 
+    {
+    	printf("CONST_ENTERO: %s\n", $<cadena>1);
+    	if(esAverage==0)
+    		if(esAsignacion==1&&tipoAsignacion!=tipoEntero)
+    			yyerrormsj($<cadena>1, ErrorSintactico,ErrorConstanteDistintoTipo,"");
+    } 
+    | CONST_REAL 
+    {
+    	printf("CONST_REAL: %s\n", $<cadena>1);
+    	if(esAsignacion==1&&tipoAsignacion!=tipoReal)
+    		yyerrormsj($<cadena>1, ErrorSintactico,ErrorConstanteDistintoTipo,"");
+    }
+	| CONST_CADENA 
+	{
+		printf("CONST_CADENA: %s\n", $<cadena>1);
+		if(esAsignacion==1&&tipoAsignacion!=tipoCadena)
+    		yyerrormsj($<cadena>1, ErrorSintactico,ErrorConstanteDistintoTipo,"");
+	}
     | P_A expresion P_C 
     | average
+    {
+    	if(esAsignacion==1&&tipoAsignacion!=tipoReal)
+    		yyerrormsj($<cadena>1, ErrorSintactico,ErrorConstanteDistintoTipo,"");
+    }
     ;
 
 vector:
     ID C_A ID C_C
     | ID C_A CONST_ENTERO C_C
     {
-    	if(strcmp(tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>1)].tipo,SIN_ASIGNAR)==0){
+    	if(tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>1)].tipo==sinTipo)
     		yyerrormsj($<cadena>1,ErrorSintactico,ErrorArraySinTipo,"");
-    	}
-    	if(atoi($<cadena>3)<=0 || atoi($<cadena>3)>(tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>1)].limite)){
+    	if(atoi($<cadena>3)<=0 || atoi($<cadena>3)>(tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>1)].limite))
     		yyerrormsj($<cadena>1,ErrorSintactico,ErrorArrayFueraDeRango,$<cadena>3);
+    	if(esAsignacionVectorMultiple==0){
+    		cantidadDeExpresionesEsperadasEnVector=atoi($<cadena>3);
     	}
     }
     ;
 
 average:
-	AVG {printf("AVERAGE\n");}P_A C_A expresiones C_C P_C
+	AVG 
+	{
+		printf("AVERAGE\n");
+		esAverage=1;
+	} P_A C_A expresiones C_C P_C {esAverage=0;}
 
 expresiones:
-	expresion
+	expresion 
+	{
+		if(esAsignacionVectorMultiple==1&&esAverage==0)
+			contadorExpresionesVector++;
+	}
 	| expresiones COMA expresion
+	{
+		if(esAsignacionVectorMultiple==1&&esAverage==0)
+			contadorExpresionesVector++;
+	}
 
 %%
 
@@ -319,7 +433,7 @@ int main(int argc,char *argv[])
 	}
 	else
 	{
-		tiraDeTokens=(char*)malloc(sizeof(char)*1);
+		tiraDeTokens=(char*)malloc(sizeof(char));
 		strcpy(tiraDeTokens,"");
 		yyparse();
 	}
@@ -334,7 +448,7 @@ int main(int argc,char *argv[])
 int yyerrormsj(const char * info,enum tipoDeError tipoDeError ,enum error error, const char *infoAdicional)
      {
 		 grabarTablaDeSimbolos(1);
-		printf("Linea: %d. ",yylineno);
+		printf("[Linea %d] ",yylineno);
        switch(tipoDeError){
           case ErrorSintactico: 
             printf("Error sintactico. ");
@@ -343,36 +457,12 @@ int yyerrormsj(const char * info,enum tipoDeError tipoDeError ,enum error error,
             printf("Error lexico. ");
             break;
         }
-      switch(error){ 
-        case ErrorIntFueraDeRango: 
-            printf("Entero %s fuera de rango [-%d ; %d]\n",info,ENTERO_MAXIMO,ENTERO_MAXIMO-1);
-            break ;
-		case ErrorFloatFueraDeRango: 
-            printf("Real %s fuera de rango. Debe ser un real de 32bits\n",info);
-            break ;
-        case ErrorStringFueraDeRango:
-            printf("Cadena: \"%s\" fuera de rango. La longitud maxima es 30 caracteres\n", info);
-            break ; 
-		case ErrorEnDeclaracionCantidad:
-			printf("Descripcion: no coinciden la cantidad de ids declaradas con la cantidad de tipos declarados\n");
-			break ; 
+      switch(error){  
 		case ErrorIdRepetida:
 			printf("Descripcion: el id '%s' ha sido declarado mas de una vez\n",info);
 			break;
 		case ErrorIdNoDeclarado: 
 			printf("Descripcion: el id '%s' no ha sido declarado\n",info);
-			break;
-		case ErrorIdDistintoTipo: 
-			break;
-		case ErrorConstanteDistintoTipo: 
-			break;
-		case ErrorAllEqual: 
-			printf("Descripcion: Error AllEqual: %s\n",info);
-			break;
-		case ErrorOperacionNoValida:
-			break;
-		case ErrorMultipleTipo:
-			printf("Descripcion: el id '%s' ya tiene un tipo asignado\n",info);
 			break;
 		case ErrorArraySinTipo:
 			printf("Descripcion: el id '%s' NO tiene un tipo asignado\n",info);
@@ -382,6 +472,18 @@ int yyerrormsj(const char * info,enum tipoDeError tipoDeError ,enum error error,
 			break;
 		case ErrorLimiteArrayNoPermitido:
 			printf("Descripcion: el vector %s (%s) no tiene un limite valido, debe ser mayor a 0\n",info, infoAdicional);
+			break;
+		case ErrorOperacionNoValida: 
+			printf("Descripcion: La operacion %s no es valida para variables de tipo %s\n",info, obtenerTipo(sectorVariables, tipoAsignacion));
+			break;
+		case ErrorIdDistintoTipo: 
+			printf("Descripcion: La variable '%s' no es de tipo %s\n",info,obtenerTipo(sectorVariables, tipoAsignacion));
+			break;
+		case ErrorConstanteDistintoTipo: 
+			printf("Descripcion: La constante %s no es de tipo %s\n", info, obtenerTipo(sectorVariables, tipoAsignacion));
+			break;
+		case ErrorArrayAsignacionMultiple: 
+			printf("Descripcion: El vector %s esperaba %d expresiones, pero se recibieron %d.\n", info,cantidadDeExpresionesEsperadasEnVector,contadorExpresionesVector );
 			break;
       }
 

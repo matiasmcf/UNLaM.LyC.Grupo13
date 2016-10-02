@@ -5,11 +5,13 @@
 	#include <conio.h>
 	#include "y.tab.h"
 	#include <string.h>
+	#include <float.h>
 
 //DEFINE/////////////////////////////////////////////////////////////
 	#define CARACTER_NOMBRE "_"
 	#define NO_ENCONTRADO -1
-	#define SIN_ASIGNAR "SinAsignar"
+	#define preMaxCadena 46
+	#define preMaxEntero 6
 
 //ENUMS//////////////////////////////////////////////////////////////
 	enum valorMaximo{
@@ -35,6 +37,7 @@
 		errorEnteroFueraDeRango,
 		errorRealFueraDeRango,
 		errorCadenaDemasiadoLarga,
+		errorIdDemasiadoLargo,
 		errorCaracterInvalido
 	};
 
@@ -42,7 +45,7 @@
 	typedef struct{
 		char nombre[100];
 		char valor[100];
-		char tipo[100];
+		enum tipoDato tipo;
 		int longitud;
 		int limite;
 	} registro;
@@ -57,6 +60,8 @@
 	void mensajeDeError(enum error,const char*);
 	char * cortarCadena(char* ,int);
 	void guardarToken(char *);
+	char* obtenerTipo(enum sectorTabla, enum tipoDato);
+	void mostrarTablaDeSimbolos();
 
 //VARIABLES GLOBALES/////////////////////////////////////////////////
 	unsigned long entero64bits;
@@ -92,12 +97,12 @@ CONST_REAL					([0-9]*\.[0-9]+)
 "["							{ guardarToken("C_A\n");return C_A;}
 "]"							{ guardarToken("C_C\n");return C_C;}
 "\""						{ guardarToken("COMILLA\n");return COMILLA;}
-"=="						{ guardarToken("CMP_IGUAL\n");return COMPARADOR;}
-"!="						{ guardarToken("CMP_DIST\n");return COMPARADOR; }
-">"							{ guardarToken("CMP_MAYOR\n");return COMPARADOR; }
-"<"							{ guardarToken("CMP_MENOR\n");return COMPARADOR; }
-"<="						{ guardarToken("CMP_NENIG\n");return COMPARADOR; }
-">="						{ guardarToken("CMP_MAYIG\n");return COMPARADOR; }
+"=="						{ guardarToken("CMP_IGUAL\n");strcpy(yylval.cadena,yytext);return COMPARADOR;}
+"!="						{ guardarToken("CMP_DIST\n");strcpy(yylval.cadena,yytext);return COMPARADOR; }
+">"							{ guardarToken("CMP_MAYOR\n");strcpy(yylval.cadena,yytext);return COMPARADOR; }
+"<"							{ guardarToken("CMP_MENOR\n");strcpy(yylval.cadena,yytext);return COMPARADOR; }
+"<="						{ guardarToken("CMP_NENIG\n");strcpy(yylval.cadena,yytext);return COMPARADOR; }
+">="						{ guardarToken("CMP_MAYIG\n");strcpy(yylval.cadena,yytext);return COMPARADOR; }
 "and"						{ guardarToken("AND\n");return AND; }
 "or"						{ guardarToken("OR\n");return OR; }
 "not"              			{ guardarToken("OP_NOT\n");return OP_NOT; }
@@ -192,20 +197,38 @@ void grabarTablaDeSimbolos(int error){
 	fprintf(pf,"%-32s|\t%-15s|\t%-32s|\t%-13s|\t%-13s\n\n","NOMBRE","TIPO","VALOR","LONGITUD","LIMITE");
 	for(i = 0; i<indiceVariable; i++){
 		if(tablaVariables[i].limite!=0)
-			fprintf(pf,"%-32s|\t%-15s|\t%-32s|\t%-13s|\t%-13d\n",tablaVariables[i].nombre,tablaVariables[i].tipo,"----------------------------","----------",tablaVariables[i].limite);
+			fprintf(pf,"%-32s|\t%-15s|\t%-32s|\t%-13s|\t%-13d\n",tablaVariables[i].nombre,obtenerTipo(sectorVariables, tablaVariables[i].tipo),"----------------------------","----------",tablaVariables[i].limite);
 		else
-			fprintf(pf,"%-32s|\t%-15s|\t%-32s|\t%-13s|\t%-13s\n",tablaVariables[i].nombre,tablaVariables[i].tipo,"----------------------------","----------","----------");
+			fprintf(pf,"%-32s|\t%-15s|\t%-32s|\t%-13s|\t%-13s\n",tablaVariables[i].nombre,obtenerTipo(sectorVariables, tablaVariables[i].tipo),"----------------------------","----------","----------");
 	}
 
 	for(i = 0; i<indiceConstante; i++){
 		if(tablaConstantes[i].longitud==0)
-			fprintf(pf,"%-32s|\t%-15s|\t%-32s|\t%-13s|\t%-13s\n",tablaConstantes[i].nombre,tablaConstantes[i].tipo,tablaConstantes[i].valor,"----------","----------");
+			fprintf(pf,"%-32s|\t%-15s|\t%-32s|\t%-13s|\t%-13s\n",tablaConstantes[i].nombre,obtenerTipo(sectorConstantes, tablaConstantes[i].tipo),tablaConstantes[i].valor,"----------","----------");
 		else
-			fprintf(pf,"%-32s|\t%-15s|\t%-32s|\t%-13d|\t%-13s\n",tablaConstantes[i].nombre,tablaConstantes[i].tipo,tablaConstantes[i].valor,tablaConstantes[i].longitud,"----------");
+			fprintf(pf,"%-32s|\t%-15s|\t%-32s|\t%-13d|\t%-13s\n",tablaConstantes[i].nombre,obtenerTipo(sectorConstantes, tablaConstantes[i].tipo),tablaConstantes[i].valor,tablaConstantes[i].longitud,"----------");
 	}
 	if(error==1)
-		fprintf(pf,"TABLA INCOMPLETA (ERROR DE COMPILACION)\n");
+		fprintf(pf,"\n**** TABLA INCOMPLETA (ERROR DE COMPILACION) ****\n");
 	fclose(pf);
+}
+
+void mostrarTablaDeSimbolos(){
+	printf("%-32s|\t%-15s|\t%-32s|\t%-13s|\t%-13s\n\n","NOMBRE","TIPO","VALOR","LONGITUD","LIMITE");
+	int i;
+	for(i = 0; i<indiceVariable; i++){
+		if(tablaVariables[i].limite!=0)
+			printf("%-32s|\t%-15s|\t%-32s|\t%-13s|\t%-13d\n",tablaVariables[i].nombre,obtenerTipo(sectorVariables, tablaVariables[i].tipo),"----------------------------","----------",tablaVariables[i].limite);
+		else
+			printf("%-32s|\t%-15s|\t%-32s|\t%-13s|\t%-13s\n",tablaVariables[i].nombre,obtenerTipo(sectorVariables, tablaVariables[i].tipo),"----------------------------","----------","----------");
+	}
+
+	for(i = 0; i<indiceConstante; i++){
+		if(tablaConstantes[i].longitud==0)
+			printf("%-32s|\t%-15s|\t%-32s|\t%-13s|\t%-13s\n",tablaConstantes[i].nombre,obtenerTipo(sectorConstantes, tablaConstantes[i].tipo),tablaConstantes[i].valor,"----------","----------");
+		else
+			printf("%-32s|\t%-15s|\t%-32s|\t%-13d|\t%-13s\n",tablaConstantes[i].nombre,obtenerTipo(sectorConstantes, tablaConstantes[i].tipo),tablaConstantes[i].valor,tablaConstantes[i].longitud,"----------");
+	}
 }
 
 char* normalizar(char* cadena){
@@ -222,56 +245,99 @@ char* normalizar(char* cadena){
 	return aux;
 }
 
+char* obtenerTipo(enum sectorTabla sector, enum tipoDato tipo){
+	switch(sector){
+		case sectorConstantes:
+			switch(tipo){
+				case tipoReal:
+					return("const_real");
+					break;
+				case tipoCadena:
+					return("const_cadena");
+					break;
+				case tipoEntero:
+					return("const_entera");
+					break;
+			}
+			break;
+		case sectorVariables:
+			switch(tipo){
+				case tipoReal:
+					return("real");
+					break;
+				case tipoCadena:
+					return("cadena");
+					break;
+				case tipoEntero:
+					return("entero");
+					break;
+				case tipoArray:
+					return("array");
+					break;
+				case sinTipo:
+					return("sin tipo");
+					break;
+			}
+			break;
+	}
+}
 
 void insertarEnTablaDeSimbolos(enum sectorTabla sector, enum tipoDato tipo){
+	char *cadena=(char*)malloc(sizeof(char));
 	switch(sector){
 		case sectorConstantes:
 			if(buscarEnTablaDeSimbolos(sectorConstantes,yytext)!=NO_ENCONTRADO)
 				return;
 			switch (tipo) {
 				case tipoReal:
-					if (atof(yytext)<0 || atof(yytext)>ENTERO_MAXIMO)
+					if (atof(yytext)<0 || atof(yytext)>FLT_MAX)
 						mensajeDeError(errorRealFueraDeRango,yytext);
 					strcpy(tablaConstantes[indiceConstante].valor,yytext);
-					strcpy(tablaConstantes[indiceConstante].tipo,"const_real");
+					tablaConstantes[indiceConstante].tipo=tipoReal;
 					tablaConstantes[indiceConstante].longitud=0;
 					tablaConstantes[indiceConstante].limite=0;
 					strcpy(tablaConstantes[indiceConstante++].nombre,normalizar(yytext));
 					break;
 
 				case tipoCadena:
-					yytext=reemplazarCaracter(yytext,"\"","");
-					if(strlen(yytext)>=CADENA_MAXIMA)
-						mensajeDeError(errorCadenaDemasiadoLarga, yytext);
-					strcpy(tablaConstantes[indiceConstante].valor,yytext);
-					strcpy(tablaConstantes[indiceConstante].tipo,"const_cadena");
-					tablaConstantes[indiceConstante].longitud=strlen(yytext);
+					strcpy(cadena,yytext);
+					cortarCadena(cadena,preMaxCadena);
+					cadena=reemplazarCaracter(cadena,"\"","");
+					if(strlen(cadena)>=CADENA_MAXIMA)
+						mensajeDeError(errorCadenaDemasiadoLarga, cadena);
+					strcpy(tablaConstantes[indiceConstante].valor,cadena);
+					tablaConstantes[indiceConstante].tipo=tipoCadena;
+					tablaConstantes[indiceConstante].longitud=strlen(cadena);
 					tablaConstantes[indiceConstante].limite=0;
-					strcpy(tablaConstantes[indiceConstante++].nombre,normalizar(yytext));
+					strcpy(tablaConstantes[indiceConstante++].nombre,normalizar(cadena));
 					break;
 
 				case tipoEntero:
-					if (atoi(yytext)<0 || atoi(yytext)>ENTERO_MAXIMO)
+					strcpy(cadena,yytext);
+					cortarCadena(cadena,preMaxEntero);
+					if (atoi(cadena)<0 || atoi(cadena)>ENTERO_MAXIMO)
 						mensajeDeError(errorEnteroFueraDeRango,yytext);
-					strcpy(tablaConstantes[indiceConstante].valor,yytext);
-					strcpy(tablaConstantes[indiceConstante].tipo,"const_entero");
+					strcpy(tablaConstantes[indiceConstante].valor,cadena);
+					tablaConstantes[indiceConstante].tipo=tipoEntero;
 					tablaConstantes[indiceConstante].longitud=0;
 					tablaConstantes[indiceConstante].limite=0;
-					strcpy(tablaConstantes[indiceConstante++].nombre,normalizar(yytext));
+					strcpy(tablaConstantes[indiceConstante++].nombre,normalizar(cadena));
 					break;
 			}
 			break;
 
 		case sectorVariables:
-			if(buscarEnTablaDeSimbolos(sectorVariables,yytext)!=NO_ENCONTRADO)
+			cadena=cortarCadena(yytext,preMaxCadena);
+			cadena=reemplazarCaracter(cadena,"\"","");
+			if(strlen(cadena)>=CADENA_MAXIMA)
+				mensajeDeError(errorCadenaDemasiadoLarga, cadena);
+			if(buscarEnTablaDeSimbolos(sectorVariables,cadena)!=NO_ENCONTRADO)
 				return;
-			yytext=reemplazarCaracter(yytext,"\"","");
-			strcpy(tablaVariables[indiceVariable].valor,yytext);
-			strcpy(tablaVariables[indiceVariable].tipo,SIN_ASIGNAR);
-			tablaVariables[indiceVariable].longitud=strlen(yytext);
-			tablaConstantes[indiceConstante].limite=0;
-			strcpy(tablaVariables[indiceVariable++].nombre,normalizar(yytext));
-			break;
+			strcpy(tablaVariables[indiceVariable].valor,cadena);
+			tablaVariables[indiceVariable].tipo=sinTipo;
+			tablaVariables[indiceVariable].longitud=0;
+			tablaVariables[indiceVariable].limite=0;
+			strcpy(tablaVariables[indiceVariable++].nombre,normalizar(cadena));
 			break;
 	}
 }
@@ -284,12 +350,14 @@ int buscarEnTablaDeSimbolos(enum sectorTabla sector, char* objetivo){
 				for(i=0;i<indiceConstante;i++)
 					if(strcmp(tablaConstantes[i].nombre,objetivo)==0)
 						return i;
+				return NO_ENCONTRADO;
 				break;
 
 		case sectorVariables:
 				for(i=0;i<indiceVariable;i++)
 					if(strcmp(tablaVariables[i].nombre,objetivo)==0)
 						return i;
+				return NO_ENCONTRADO;
 				break;
 	}
 	return NO_ENCONTRADO;
@@ -297,23 +365,28 @@ int buscarEnTablaDeSimbolos(enum sectorTabla sector, char* objetivo){
 
 void mensajeDeError(enum error error,const char* info){
 	grabarTablaDeSimbolos(1);
+
 	printf("[Linea %d] ",yylineno);
 	switch(error){ 
 
         case errorEnteroFueraDeRango: 
-            printf("ERROR LEXICO. Descripcion: Entero %s fuera de rango [0 ; %d]\n",info,ENTERO_MAXIMO-1);
+            printf("ERROR LEXICO. Descripcion: Entero %s fuera de rango [0 ; %d]\n",info,ENTERO_MAXIMO);
             break ;
 
 		case errorRealFueraDeRango: 
-            printf("ERROR LEXICO. Descripcion: Real %s fuera de rango. Debe ser un real de 32bits\n",info);
+            printf("ERROR LEXICO. Descripcion: Real %s fuera de rango. Debe ser un real de 32bits.\n",info);
             break ;
 
         case errorCadenaDemasiadoLarga:
-            printf("ERROR LEXICO. Descripcion: Cadena \"%s\" fuera de rango. La longitud maxima es 30 caracteres\n", info);
+            printf("ERROR LEXICO. Descripcion: Cadena \"%s\" fuera de rango. La longitud maxima es de 30 caracteres.\n", info);
+            break ; 
+
+        case errorIdDemasiadoLargo:
+            printf("ERROR LEXICO. Descripcion: El id \"%s\" es demasiado largo. La longitud maxima es de 30 caracteres.\n", info);
             break ; 
 
         case errorCaracterInvalido:
-        	printf("ERROR LEXICO. Descripcion: El caracter %s es invalido\n",info);
+        	printf("ERROR LEXICO. Descripcion: El caracter %s es invalido.\n",info);
         	break;
       }
        system ("Pause");
