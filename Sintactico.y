@@ -56,10 +56,15 @@
 		int longitud;
 		int limite;
 	} registro;
-
+	
 ///////////////////// DECLARACION DE FUNCIONES /////////////////////
 	int yyerrormsj(const char *,enum tipoDeError,enum error, const char*);
 	int yyerror();
+	
+	//Funciones para notacion intermedia
+	void insertarEnPolaca(char * v);
+	void inicializarPolaca();
+	void finalizarPolaca();
 
 ///////////////////// DECLARACION DE VARIABLES GLOBALES //////////// 
 	extern registro tablaVariables[TAM];
@@ -83,6 +88,8 @@
 	int contadorListaVar=0;
 	int contadorExpresionesVector=0;
 	int cantidadDeExpresionesEsperadasEnVector=0;
+	//Notacion intermedia
+	FILE *pPolaca;
 
 	%}
 
@@ -287,7 +294,14 @@ asignacion:
 		printf("ASIGNACION: %s\t", $<cadena>1);
 		tipoAsignacion=tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>1)].tipo;
 		printf("(tipo: %s)\n",obtenerTipo(sectorVariables,tipoAsignacion));
-	} OP_ASIG expresion {esAsignacion=0;tipoAsignacion=sinTipo;}
+	} 
+	OP_ASIG expresion 
+	{
+		esAsignacion=0;
+		tipoAsignacion=sinTipo;
+		insertarEnPolaca($<cadena>1);
+		insertarEnPolaca("=");		
+	}
 	;
 
 asignacion_vector: 
@@ -315,13 +329,13 @@ expresion:
 		if(esAsignacion==1&&tipoAsignacion==tipoCadena)
 			yyerrormsj("resta", ErrorSintactico,ErrorOperacionNoValida,"");
 
-	} termino
+	} termino {insertarEnPolaca("-");}
     |expresion OP_SUMA 
     {
     	if(esAsignacion==1&&tipoAsignacion==tipoCadena)
 			yyerrormsj("suma", ErrorSintactico,ErrorOperacionNoValida,"");
     	printf("SUMA\n");
-    }termino
+    }termino {insertarEnPolaca("+");}
 	|expresion OP_CONCAT 
 	{
 		if(esAsignacion==1&&tipoAsignacion!=tipoCadena)
@@ -337,13 +351,13 @@ termino:
     	printf("MULTIPLICACION\n");
     	if(esAsignacion==1&&tipoAsignacion==tipoCadena)
 			yyerrormsj("multiplicacion", ErrorSintactico,ErrorOperacionNoValida,"");
-    } factor
+    } factor {insertarEnPolaca("*");}
     |termino OP_DIV 
     {
     	printf("DIVISION\n");
     	if(esAsignacion==1&&tipoAsignacion==tipoCadena)
 			yyerrormsj("division", ErrorSintactico,ErrorOperacionNoValida,"");
-    } factor
+    } factor {insertarEnPolaca("/");}
 	;
 
 factor:
@@ -355,7 +369,7 @@ factor:
     	if(esAverage==0)
     		if(esAsignacion==1&& tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>1)].tipo!=tipoAsignacion)
 				yyerrormsj($<cadena>1, ErrorSintactico,ErrorIdDistintoTipo,"");
-    }
+    } {insertarEnPolaca($<cadena>1);}
     | vector 
     {
     	printf("VECTOR: %s\n", $<cadena>1);
@@ -369,6 +383,7 @@ factor:
     	if(esAverage==0)
     		if(esAsignacion==1&&tipoAsignacion!=tipoEntero)
     			yyerrormsj($<cadena>1, ErrorSintactico,ErrorConstanteDistintoTipo,"");
+		insertarEnPolaca($<cadena>1);
     } 
     | CONST_REAL 
     {
@@ -427,6 +442,7 @@ expresiones:
 
 int main(int argc,char *argv[])
 {
+	inicializarPolaca();
 	if ((yyin = fopen(argv[1], "rt")) == NULL)
 	{
 		printf("\nNo se puede abrir el archivo: %s\n", argv[1]);
@@ -439,6 +455,7 @@ int main(int argc,char *argv[])
 	}
 	fclose(yyin);
 	grabarTablaDeSimbolos(0);
+	finalizarPolaca();
 	printf("\n* COMPILACION EXITOSA *\n");
 	return 0;
 }
@@ -498,3 +515,19 @@ int yyerror()
 		system ("Pause");
 		exit (1);
      }
+
+void inicializarPolaca(){
+    pPolaca = fopen("intermedia.txt", "w");
+    if(pPolaca == NULL){
+        printf("Error al abrir el archivo: intermedia.txt \n");
+    }
+}
+
+void insertarEnPolaca( char *token ){
+    fputs( token, pPolaca);
+	fputs( " ", pPolaca);
+}
+
+void finalizarPolaca(){
+    fclose(pPolaca);
+}

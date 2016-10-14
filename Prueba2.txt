@@ -1,0 +1,66 @@
+programa 
+	DECVAR	
+		asd(4), abc(5): array
+		a, b: entero
+		c, d: cadena
+		e: entero
+		g: real
+	ENDEC
+
+	WRITE "Inicio del programa"
+	a=10
+
+	-/Prueba cota/-
+	-/a=1000000000000000000000000000000000000/-
+	b=20
+	c="cadena"
+
+	-/Prueba cota/-
+	-/c="cadenaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"/-
+	d=" de prueba"
+
+	-/Prueba tipo/-
+	-/d=30/-
+	e=2
+
+	-/Prueba ID no definido/-
+	-/f=30/-
+	-/Comentario-/anidado/-/-
+	if(a<b and b==20)
+		repeat
+			repeat
+				e=e-1
+			while (e>1)
+			a=a-1
+		while(a!=0)
+		if(a==0)
+			WRITE "a es igual a cero"
+		else
+			WRITE "a es distinto de cero"
+		endif
+	endif
+	c=c++d
+	WRITE c
+	WRITE "Ingrese un valor para e"
+	READ e
+	WRITE "Se ha leido: "
+	WRITE e
+
+	-/Prueba tema especial: AVERAGE/-
+	g= AVG([2,a+b,c*(d+e),48])
+
+	-/Prueba tema especial: ARRAY/-
+	asd[2]=5+4*(2-1)
+	abc[3]={4,b,asd[2]}
+	asd[b]=asd[a]+1
+
+	-/Prueba temas especiales combinados/-
+	abc[3]={4,AVG([2,a+b,8]),asd[2]}
+	if(AVG([1,2+a,abc[1]])>=asd[2])
+		WRITE "avg mayor a asd[2]"
+	else
+		WRITE "avg menor a asd[2]"
+	endif
+
+	WRITE "Fin del programa"
+fin_programa
