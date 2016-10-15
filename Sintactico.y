@@ -371,12 +371,6 @@ factor:
 				yyerrormsj($<cadena>1, ErrorSintactico,ErrorIdDistintoTipo,"");
     } {insertarEnPolaca($<cadena>1);}
     | vector 
-    {
-    	printf("VECTOR: %s\n", $<cadena>1);
-    	if(esAverage==0)
-    		if(esAsignacion==1&&tipoAsignacion!=tipoEntero)
-    			yyerrormsj($<cadena>1, ErrorSintactico,ErrorIdDistintoTipo,"");
-    }
     | CONST_ENTERO 
     {
     	printf("CONST_ENTERO: %s\n", $<cadena>1);
@@ -407,8 +401,21 @@ factor:
 
 vector:
     ID C_A ID C_C
-    | ID C_A CONST_ENTERO C_C
     {
+    	printf("VECTOR: %s\n", $<cadena>1);
+    	if(esAverage==0)
+    		if(esAsignacion==1&&tipoAsignacion!=tipoEntero)
+    			yyerrormsj($<cadena>1, ErrorSintactico,ErrorIdDistintoTipo,"");
+    	char aux[50];
+    	strcpy(aux,$<cadena>1);
+    	strcat(aux,"[");
+    	strcat(aux,$<cadena>3);
+    	strcat(aux,"]");
+    	insertarEnPolaca(aux);
+    }
+    | ID C_A CONST_ENTERO C_C
+    {	
+    	printf("VECTOR: %s\n", $<cadena>1);
     	if(tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>1)].tipo==sinTipo)
     		yyerrormsj($<cadena>1,ErrorSintactico,ErrorArraySinTipo,"");
     	if(atoi($<cadena>3)<=0 || atoi($<cadena>3)>(tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>1)].limite))
@@ -416,6 +423,15 @@ vector:
     	if(esAsignacionVectorMultiple==0){
     		cantidadDeExpresionesEsperadasEnVector=atoi($<cadena>3);
     	}
+    	if(esAverage==0)
+    		if(esAsignacion==1&&tipoAsignacion!=tipoEntero)
+    			yyerrormsj($<cadena>1, ErrorSintactico,ErrorIdDistintoTipo,"");
+    	char aux[50];
+    	strcpy(aux,$<cadena>1);
+    	strcat(aux,"[");
+    	strcat(aux,$<cadena>3);
+    	strcat(aux,"]");
+    	insertarEnPolaca(aux);
     }
     ;
 
@@ -525,7 +541,7 @@ void inicializarPolaca(){
 
 void insertarEnPolaca( char *token ){
     fputs( token, pPolaca);
-	fputs( " ", pPolaca);
+	fputs( "\n", pPolaca);
 }
 
 void finalizarPolaca(){

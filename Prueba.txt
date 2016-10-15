@@ -1,6 +1,7 @@
 programa 
-	DECVAR	
+	DECVAR
+		v(5):array	
 		a,b,c,d,e,f,z:entero
 	ENDEC
-	z=a+b*c-d/(e+f)+20
+	z=a+b*c-d/(e+v[3])+20
 fin_programa
