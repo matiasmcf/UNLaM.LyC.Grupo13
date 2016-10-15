@@ -3,5 +3,17 @@ programa
 		v(5):array	
 		a,b,c,d,e,f,z:entero
 	ENDEC
-	z=a+b*c-d/(e+v[3])+20
+	if(a==b)
+		a=0	
+	else
+		if(a>b)
+			repeat
+				a = a+2
+				b = b-1
+			while(a*3-7 <= b*4)
+		else
+			a=2
+		endif
+	endif
+
 fin_programa

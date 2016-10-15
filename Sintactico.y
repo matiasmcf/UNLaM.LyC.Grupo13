@@ -240,19 +240,20 @@ sentencia:
 	;
 
 sentencia_repeat: 
-	REPEAT {printf("INICIO REPEAT\n");}bloque_sentencias WHILE  P_A condicion{printf("CONDICION\n");} P_C {printf("FIN REPEAT\n");}
+	REPEAT {printf("INICIO REPEAT\n"); }bloque_sentencias {insertarEnPolaca("_SENT");}
+	WHILE  P_A condicion{printf("CONDICION\n");} P_C {printf("FIN REPEAT\n");insertarEnPolaca("_REPEAT");}
 	;
 
 sentencia_if: 
-	IF {printf("IF\n");}P_A condicion P_C bloque_if ENDIF{printf("ENDIF\n");}
+	IF {printf("IF\n");}P_A condicion P_C bloque_if ENDIF{printf("ENDIF\n");insertarEnPolaca("_IF");}
 	;
 
 bloque_if:
  	bloque_sentencias 
- 	|bloque_sentencias ELSE {printf("ELSE\n");}bloque_sentencias 
+ 	|bloque_sentencias ELSE {printf("ELSE\n");}bloque_sentencias {insertarEnPolaca("_CPO");}
  	;
 
-comparacion : expresion COMPARADOR expresion  
+comparacion : expresion COMPARADOR expresion {insertarEnPolaca($<cadena>2);} 
 	;
 
 condicion:

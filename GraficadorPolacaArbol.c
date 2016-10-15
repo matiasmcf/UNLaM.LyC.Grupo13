@@ -3,7 +3,7 @@
 	#include <conio.h>
 	#include <string.h>
 
-typedef struct
+	typedef struct
 	{
 		char valor[31];
 		int nroNodo;
@@ -35,9 +35,13 @@ typedef struct
 	t_nodo * crearHojaT(const char*);
 	t_nodo * crearNodo(const t_info *, t_nodo *, t_nodo *);
 	t_nodo * crearHoja(const t_info *);
+	int esNodo(char *);
 
 	int nroNodo;
 	t_pila pila;
+
+	char * misNodos[] = {"+","-","*","/","=","<",">","<=",">=","==","!=","_IF","_CPO",
+							"_REPEAT","_SENT"};
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 
@@ -139,6 +143,17 @@ typedef struct
 	    }
 	}
 
+	int esNodo(char * token){
+		int cont = 0;
+		int encontro = 0;
+		while((sizeof(misNodos)/sizeof(char *)) > cont){
+			if(strstr(token, misNodos[cont]) != NULL)
+				encontro = 1;
+			cont++;
+		}
+		return encontro;
+	}
+
 //////////////////////////////////////////////////////////////////////////////////////////////
 
 	void crearPila(t_pila* pp)
@@ -196,7 +211,8 @@ typedef struct
 					generarArchivoGraphViz(arbol);
 					return 0;
 				}
-				if(strchr(line, '+')!=NULL||strchr(line, '-')!=NULL||strchr(line, '=')!=NULL||strchr(line, '*')!=NULL||strchr(line, '/')!=NULL){
+
+				if(esNodo(line)){
 					t_info info;
 					strcpy(info.valor,line);
 					arbol=crearNodo(&info,sacar_de_pila(&pila),sacar_de_pila(&pila));
