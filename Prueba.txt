@@ -4,6 +4,9 @@ programa
 		a,b,c,d:entero
 		f,g,h:real
 	ENDEC
+	WRITE a
+	READ b
+	WRITE "Hola mundo"
 	f=AVG([g,AVG([2*4,v[3],h])])
 	if(a==b)
 		a=0	

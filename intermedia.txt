@@ -1,3 +1,11 @@
+a
+_WRITE
+b
+_READ
+_SENT
+"Hola mundo"
+_WRITE
+_SENT
 g
 2
 4
@@ -13,6 +21,7 @@ h
 /
 f
 =
+_SENT
 a
 b
 ==

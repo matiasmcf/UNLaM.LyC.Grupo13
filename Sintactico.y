@@ -286,12 +286,16 @@ condicion:
 	;
 
 write:  
-	WRITE CONST_CADENA {printf("WRITE CONSTANTE\n");}
+	WRITE CONST_CADENA {printf("WRITE CONSTANTE\n"); 
+		insertarEnPolaca($<cadena>2);
+		insertarEnPolaca("_WRITE");}
 	|WRITE ID 
 	{
 		printf("WRITE VARIABLE\n");
 		if(tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>1)].tipo==sinTipo)
-			yyerrormsj($<cadena>1,ErrorSintactico,ErrorIdNoDeclarado,"");
+			yyerrormsj($<cadena>1,ErrorSintactico,ErrorIdNoDeclarado,""); 
+		insertarEnPolaca($<cadena>2);
+		insertarEnPolaca("_WRITE");
 	}
 	;
 
@@ -300,7 +304,9 @@ read:
 	{
 		printf("READ VARIABLE\n");
 		if(tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>1)].tipo==sinTipo)
-			yyerrormsj($<cadena>1,ErrorSintactico,ErrorIdNoDeclarado,"");
+			yyerrormsj($<cadena>1,ErrorSintactico,ErrorIdNoDeclarado,"");	 
+		insertarEnPolaca($<cadena>2);
+		insertarEnPolaca("_READ");
 	}
 	;
 
