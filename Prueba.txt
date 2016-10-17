@@ -1,8 +1,10 @@
 programa 
 	DECVAR
 		v(5):array	
-		a,b,c,d,e,f,z:entero
+		a,b,c,d:entero
+		f,g,h:real
 	ENDEC
+	f=AVG([g,AVG([2*4,v[3],h])])
 	if(a==b)
 		a=0	
 	else
@@ -15,5 +17,4 @@ programa
 			a=2
 		endif
 	endif
-
 fin_programa

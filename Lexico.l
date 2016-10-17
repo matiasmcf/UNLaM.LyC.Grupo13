@@ -399,5 +399,4 @@ void guardarToken(char* token){
 	tiraDeTokens=(char*) malloc ( sizeof(char) * (strlen(aux)) + strlen(token)+1);
 	strcpy(tiraDeTokens,aux);
 	strcat(tiraDeTokens,token);
-	//printf("%s",token);
 }

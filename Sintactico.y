@@ -40,7 +40,8 @@
 		ErrorOperacionNoValida,
 		ErrorIdDistintoTipo,
 		ErrorConstanteDistintoTipo,
-		ErrorArrayAsignacionMultiple
+		ErrorArrayAsignacionMultiple,
+		ErrorTipoAverage
 	};
 
 		enum tipoDeError{
@@ -57,7 +58,21 @@
 		int limite;
 	} registro;
 	
-///////////////////// DECLARACION DE FUNCIONES /////////////////////
+	typedef struct
+	{
+		char *cadena;
+		int cantExpresiones;
+		int nro;
+	}t_infoAvg;
+
+	typedef struct s_nodoPila{
+    	t_infoAvg info;
+    	struct s_nodoPila* psig;
+	}t_nodoPila;
+
+	typedef t_nodoPila *t_pila;
+
+	///////////////////// DECLARACION DE FUNCIONES /////////////////////
 	int yyerrormsj(const char *,enum tipoDeError,enum error, const char*);
 	int yyerror();
 	
@@ -65,6 +80,13 @@
 	void insertarEnPolaca(char * v);
 	void inicializarPolaca();
 	void finalizarPolaca();
+	//Funciones para manejo de pilas
+	void vaciarPila(t_pila*);
+	t_infoAvg* sacar_de_pila(t_pila*);
+	void crearPila(t_pila*);
+	int ponerEnPilaAVG(t_pila*,t_infoAvg*);
+	t_infoAvg* topeDePila(t_pila*);
+	void avg_agregarApolaca(char*,int);
 
 ///////////////////// DECLARACION DE VARIABLES GLOBALES //////////// 
 	extern registro tablaVariables[TAM];
@@ -82,14 +104,15 @@
 	enum tipoDato tipoAsignacion=sinTipo;
 	//Boolean
 	int esAsignacion=0;
-	int esAverage=0;
 	int esAsignacionVectorMultiple;
 	//Contadores
 	int contadorListaVar=0;
 	int contadorExpresionesVector=0;
 	int cantidadDeExpresionesEsperadasEnVector=0;
+	int contadorAVG=0;
 	//Notacion intermedia
 	FILE *pPolaca;
+	t_pila pilaAVG;
 
 	%}
 
@@ -125,7 +148,7 @@
 %%
 
 programa:  	   
-	PROGRAMA {printf("INICIO DEL PROGRAMA\n");}bloque_declaraciones bloque_sentencias FIN_PROGRAMA {printf("FIN DEL PROGRAMA\n");}
+	PROGRAMA {printf("INICIO DEL PROGRAMA\n");} bloque_declaraciones bloque_sentencias FIN_PROGRAMA {printf("FIN DEL PROGRAMA\n");}
 	;
 
 bloque_declaraciones:
@@ -227,7 +250,7 @@ var_dec:
 
 bloque_sentencias: 
 	sentencia
-	|bloque_sentencias sentencia
+	|bloque_sentencias sentencia {insertarEnPolaca("_SENT");}
 	;
 
 sentencia: 
@@ -240,7 +263,7 @@ sentencia:
 	;
 
 sentencia_repeat: 
-	REPEAT {printf("INICIO REPEAT\n"); }bloque_sentencias {insertarEnPolaca("_SENT");}
+	REPEAT {printf("INICIO REPEAT\n"); }bloque_sentencias 
 	WHILE  P_A condicion{printf("CONDICION\n");} P_C {printf("FIN REPEAT\n");insertarEnPolaca("_REPEAT");}
 	;
 
@@ -364,39 +387,67 @@ termino:
 factor:
     ID 
     {
+    	printf("ID: %s\n", $<cadena>1);
+    	//verificacion de errores
     	if(tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>1)].tipo==sinTipo)
 			yyerrormsj($<cadena>1,ErrorSintactico,ErrorIdNoDeclarado,"");
-    	printf("ID: %s\n", $<cadena>1);
-    	if(esAverage==0)
+    	if(topeDePila(&pilaAVG)==NULL)
     		if(esAsignacion==1&& tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>1)].tipo!=tipoAsignacion)
 				yyerrormsj($<cadena>1, ErrorSintactico,ErrorIdDistintoTipo,"");
-    } {insertarEnPolaca($<cadena>1);}
+		//Acciones
+		if(topeDePila(&pilaAVG)!=NULL){
+			avg_agregarApolaca($<cadena>1,0);
+		}
+		else
+			insertarEnPolaca($<cadena>1);
+	}
     | vector 
     | CONST_ENTERO 
     {
     	printf("CONST_ENTERO: %s\n", $<cadena>1);
-    	if(esAverage==0)
+    	//verificacion de errores
+    	if(topeDePila(&pilaAVG)==NULL)
     		if(esAsignacion==1&&tipoAsignacion!=tipoEntero)
     			yyerrormsj($<cadena>1, ErrorSintactico,ErrorConstanteDistintoTipo,"");
-		insertarEnPolaca($<cadena>1);
+		//Acciones
+		if(topeDePila(&pilaAVG)!=NULL){
+			avg_agregarApolaca($<cadena>1,0);
+		}
+		else
+			insertarEnPolaca($<cadena>1);
     } 
     | CONST_REAL 
     {
     	printf("CONST_REAL: %s\n", $<cadena>1);
+    	//verificacion de errores
     	if(esAsignacion==1&&tipoAsignacion!=tipoReal)
     		yyerrormsj($<cadena>1, ErrorSintactico,ErrorConstanteDistintoTipo,"");
+    	//Acciones
+		if(topeDePila(&pilaAVG)!=NULL){
+			avg_agregarApolaca($<cadena>1,0);
+		}
+		else
+			insertarEnPolaca($<cadena>1);
     }
 	| CONST_CADENA 
 	{
 		printf("CONST_CADENA: %s\n", $<cadena>1);
+		//verificacion de errores
 		if(esAsignacion==1&&tipoAsignacion!=tipoCadena)
     		yyerrormsj($<cadena>1, ErrorSintactico,ErrorConstanteDistintoTipo,"");
+    	//Acciones
+		if(topeDePila(&pilaAVG)!=NULL){
+			avg_agregarApolaca($<cadena>1,0);
+		}
+		else
+			insertarEnPolaca($<cadena>1);
 	}
     | P_A expresion P_C 
     | average
     {
+    	//verificacion de errores
     	if(esAsignacion==1&&tipoAsignacion!=tipoReal)
-    		yyerrormsj($<cadena>1, ErrorSintactico,ErrorConstanteDistintoTipo,"");
+    		yyerrormsj($<cadena>1, ErrorSintactico,ErrorTipoAverage,"");
     }
     ;
 
@@ -404,19 +455,32 @@ vector:
     ID C_A ID C_C
     {
     	printf("VECTOR: %s\n", $<cadena>1);
-    	if(esAverage==0)
+    	char aux[50];
+    	//Verificacion de errores
+    	if(topeDePila(&pilaAVG)==NULL)
     		if(esAsignacion==1&&tipoAsignacion!=tipoEntero)
     			yyerrormsj($<cadena>1, ErrorSintactico,ErrorIdDistintoTipo,"");
-    	char aux[50];
-    	strcpy(aux,$<cadena>1);
-    	strcat(aux,"[");
-    	strcat(aux,$<cadena>3);
-    	strcat(aux,"]");
-    	insertarEnPolaca(aux);
+    	//Acciones
+    	if(topeDePila(&pilaAVG)!=NULL){
+    		strcpy(aux,$<cadena>1);
+	    	strcat(aux,"[");
+	    	strcat(aux,$<cadena>3);
+	    	strcat(aux,"]");
+			avg_agregarApolaca(aux,0);
+		}
+		else{
+	    	strcpy(aux,$<cadena>1);
+	    	strcat(aux,"[");
+	    	strcat(aux,$<cadena>3);
+	    	strcat(aux,"]");
+	    	insertarEnPolaca(aux);
+    	}
     }
     | ID C_A CONST_ENTERO C_C
     {	
     	printf("VECTOR: %s\n", $<cadena>1);
+    	char aux[50];
+    	//Verificacion de errores
     	if(tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>1)].tipo==sinTipo)
     		yyerrormsj($<cadena>1,ErrorSintactico,ErrorArraySinTipo,"");
     	if(atoi($<cadena>3)<=0 || atoi($<cadena>3)>(tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>1)].limite))
@@ -424,15 +488,24 @@ vector:
     	if(esAsignacionVectorMultiple==0){
     		cantidadDeExpresionesEsperadasEnVector=atoi($<cadena>3);
     	}
-    	if(esAverage==0)
+    	if(topeDePila(&pilaAVG)==NULL)
     		if(esAsignacion==1&&tipoAsignacion!=tipoEntero)
     			yyerrormsj($<cadena>1, ErrorSintactico,ErrorIdDistintoTipo,"");
-    	char aux[50];
-    	strcpy(aux,$<cadena>1);
-    	strcat(aux,"[");
-    	strcat(aux,$<cadena>3);
-    	strcat(aux,"]");
-    	insertarEnPolaca(aux);
+    	//Acciones
+    	if(topeDePila(&pilaAVG)!=NULL){
+			strcpy(aux,$<cadena>1);
+	    	strcat(aux,"[");
+	    	strcat(aux,$<cadena>3);
+	    	strcat(aux,"]");
+			avg_agregarApolaca(aux,0);
+		}
+		else{
+	    	strcpy(aux,$<cadena>1);
+	    	strcat(aux,"[");
+	    	strcat(aux,$<cadena>3);
+	    	strcat(aux,"]");
+	    	insertarEnPolaca(aux);
+    	}
     }
     ;
 
@@ -440,19 +513,44 @@ average:
 	AVG 
 	{
 		printf("AVERAGE\n");
-		esAverage=1;
-	} P_A C_A expresiones C_C P_C {esAverage=0;}
+		contadorAVG++;
+		t_infoAvg info;
+		info.nro=contadorAVG;
+		info.cadena=(char*)malloc(sizeof(char));
+		info.cantExpresiones=0;
+		ponerEnPilaAVG(&pilaAVG,&info);
+	} 
+	P_A C_A expresiones C_C P_C 
+	{
+		printf("Expresiones en AVG_%d: %d\n", topeDePila(&pilaAVG)->nro,topeDePila(&pilaAVG)->cantExpresiones);
+		char aux[50];
+		sprintf(aux,"%d\n/",topeDePila(&pilaAVG)->cantExpresiones);
+		avg_agregarApolaca(aux,1);
+		insertarEnPolaca(topeDePila(&pilaAVG)->cadena);
+		sacar_de_pila(&pilaAVG);
+		if(topeDePila(&pilaAVG)!=NULL){
+			avg_agregarApolaca("+\n",1);
+		}
+	}
 
 expresiones:
 	expresion 
 	{
-		if(esAsignacionVectorMultiple==1&&esAverage==0)
-			contadorExpresionesVector++;
+		if(topeDePila(&pilaAVG)==NULL){
+			if(esAsignacionVectorMultiple==1)
+				contadorExpresionesVector++;
+		}
+		else
+			topeDePila(&pilaAVG)->cantExpresiones++;
 	}
 	| expresiones COMA expresion
 	{
-		if(esAsignacionVectorMultiple==1&&esAverage==0)
-			contadorExpresionesVector++;
+		if(topeDePila(&pilaAVG)==NULL){
+			if(esAsignacionVectorMultiple)
+				contadorExpresionesVector++;
+		}
+		else
+			topeDePila(&pilaAVG)->cantExpresiones++;
 	}
 
 %%
@@ -460,6 +558,7 @@ expresiones:
 int main(int argc,char *argv[])
 {
 	inicializarPolaca();
+	crearPila(&pilaAVG);
 	if ((yyin = fopen(argv[1], "rt")) == NULL)
 	{
 		printf("\nNo se puede abrir el archivo: %s\n", argv[1]);
@@ -519,6 +618,9 @@ int yyerrormsj(const char * info,enum tipoDeError tipoDeError ,enum error error,
 		case ErrorArrayAsignacionMultiple: 
 			printf("Descripcion: El vector %s esperaba %d expresiones, pero se recibieron %d.\n", info,cantidadDeExpresionesEsperadasEnVector,contadorExpresionesVector );
 			break;
+		case ErrorTipoAverage:
+			printf("Descripcion: La funcion AVG devuelve un valor 'real', pero '%s' es de tipo %s\n", info, obtenerTipo(sectorVariables, tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,info)].tipo));
+			break;
       }
 
        system ("Pause");
@@ -547,4 +649,72 @@ void insertarEnPolaca( char *token ){
 
 void finalizarPolaca(){
     fclose(pPolaca);
+}
+
+/////////////////Pila/////////////////////////////////////////////////////
+
+	void crearPila(t_pila* pp)
+	{
+	    *pp=NULL; 
+	}
+
+	int ponerEnPilaAVG(t_pila* pp,t_infoAvg* info)
+	{
+	    t_nodoPila* pn=(t_nodoPila*)malloc(sizeof(t_nodoPila));
+	    if(!pn)
+	        return 0;
+	    pn->info=*info;
+	    pn->psig=*pp;
+	    *pp=pn;
+	    return 1;
+	}
+
+	t_infoAvg * sacar_de_pila(t_pila* pp)
+	{
+		t_infoAvg* info = (t_infoAvg *) malloc(sizeof(t_infoAvg));
+	    if(!*pp){
+	    	return NULL;
+	    }
+	    *info=(*pp)->info;
+	    *pp=(*pp)->psig;
+	    return info;
+
+	}
+
+	void vaciarPila(t_pila* pp)
+	{
+	    t_nodoPila* pn;
+	    while(*pp)
+	    {
+	        pn=*pp;
+	        *pp=(*pp)->psig;
+	        free(pn);
+	    }
+	}
+
+	t_infoAvg* topeDePila(t_pila* pila){
+		return &((*pila)->info);
+	}
+
+	void avg_agregarApolaca(char* info,int fin){
+		fputs(info,pPolaca);
+		if(fin==0){
+			fputs("\n",pPolaca);
+			if(topeDePila(&pilaAVG)->cantExpresiones>=1&&fin==0){
+				fputs("+",pPolaca);
+				fputs("\n",pPolaca);
+			}
+		}	
+
+	/*
+	void avg_agregarApolaca(char* destino, char* info,int fin){
+		strcat(destino,info);
+		if(fin==0){
+			strcat(destino,"\n");
+			if(topeDePila(&pilaAVG)->cantExpresiones>=1&&fin==0){
+				strcat(destino,"+");
+				strcat(destino,"\n");
+			}
+		}	
+		*/
 }
