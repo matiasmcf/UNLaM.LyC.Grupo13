@@ -21,6 +21,8 @@ _0                              |	const_entera   |	0                            
 _a_es_igual_a_cero              |	const_cadena   |	a es igual a cero               |	17           |	----------   
 _a_es_distinto_de_cero          |	const_cadena   |	a es distinto de cero           |	21           |	----------   
 _3                              |	const_entera   |	3                               |	----------   |	----------   
+_asd[b]_fuera_de_rango_[1P4]    |	const_cadena   |	asd[b] fuera de rango [1;4]     |	27           |	----------   
+_abc[a]_fuera_de_rango_[1P5]    |	const_cadena   |	abc[a] fuera de rango [1;5]     |	27           |	----------   
 _7                              |	const_entera   |	7                               |	----------   |	----------   
 _8                              |	const_entera   |	8                               |	----------   |	----------   
 _9                              |	const_entera   |	9                               |	----------   |	----------   

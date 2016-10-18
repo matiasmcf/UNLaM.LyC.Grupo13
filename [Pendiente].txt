@@ -1,2 +1,1 @@
-En sintáctico:
-	• Agregar validación (en notacion intermedia) al acceder a los vectores por medio de variables: vec[varA]
+Generación de código Assembler

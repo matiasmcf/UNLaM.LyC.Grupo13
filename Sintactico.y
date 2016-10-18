@@ -99,6 +99,7 @@
 	void insertarEnPolaca(char*);
 	void guardarPolaca();
 	char* obtenerSalto(enum tipoSalto);
+	char* obtenerSalto2(char*,enum tipoSalto);
 	//Funciones para manejo de pilas
 	void vaciarPila(t_pila*);
 	t_info* sacarDePila(t_pila*);
@@ -684,6 +685,37 @@ vector:
     		if(esAsignacion==1&&tipoAsignacion!=tipoEntero)
     			yyerrormsj($<cadena>1, ErrorSintactico,ErrorIdDistintoTipo,"");
     	//Acciones
+
+    	//Validacion de rango
+    	sprintf(aux,"[if_%d]",contadorIf);
+    	insertarEnPolaca(aux);
+    	insertarEnPolaca(tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>3)].nombre);
+    	insertarEnPolaca("CMP");
+    	sprintf(aux,"%d",tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>1)].limite);
+    	insertarEnPolaca(aux);
+    	sprintf(aux,"then_if_%d",contadorIf);
+    	insertarEnPolaca(aux);
+    	insertarEnPolaca(obtenerSalto2(">=",normal));
+    	insertarEnPolaca(tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>3)].nombre);
+    	insertarEnTablaDeSimbolos(sectorConstantes,tipoEntero,"1");
+    	sprintf(aux,"%s",tablaConstantes[buscarEnTablaDeSimbolos(sectorConstantes,"1")].nombre);
+    	insertarEnPolaca(aux);
+    	insertarEnPolaca("CMP");
+    	sprintf(aux,"end_if_%d",contadorIf);
+    	insertarEnPolaca(aux);
+    	insertarEnPolaca(obtenerSalto2(">=",normal));
+    	sprintf(aux,"[then_if_%d]",contadorIf);
+    	insertarEnPolaca(aux);
+    	//Mensaje de error
+    	sprintf(aux,"%s[%s] fuera de rango [1;%d]",$<cadena>1,$<cadena>3,tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>1)].limite);
+    	insertarEnTablaDeSimbolos(sectorConstantes,tipoCadena,aux);
+    	insertarEnPolaca(tablaConstantes[buscarEnTablaDeSimbolos(sectorConstantes,aux)].nombre);
+    	insertarEnPolaca("WRITE");
+    	insertarEnPolaca("EXIT");
+    	sprintf(aux,"[end_if_%d]",contadorIf);
+    	insertarEnPolaca(aux);
+    	contadorIf++;
+    	//Agregar a polaca	
 	    strcpy(aux,tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>1)].nombre);
 	    strcat(aux,"[");
 	    strcat(aux,$<cadena>3);
@@ -979,6 +1011,40 @@ int yyerror()
 				if(strcmp(ultimoComparador,"<=")==0)
 					return("BGT");
 				if(strcmp(ultimoComparador,"!=")==0)
+					return("BEQ");
+				break;
+		}
+	}
+
+	char* obtenerSalto2(char* comparador,enum tipoSalto tipo){
+		switch(tipo){
+			case normal:
+				if(strcmp(comparador,"==")==0)
+					return("BEQ");
+				if(strcmp(comparador,">")==0)
+					return("BGT");
+				if(strcmp(comparador,"<")==0)
+					return("BLT");
+				if(strcmp(comparador,">=")==0)
+					return("BGE");
+				if(strcmp(comparador,"<=")==0)
+					return("BLE");
+				if(strcmp(comparador,"!=")==0)
+					return("BNE");
+				break;
+
+			case inverso:
+				if(strcmp(comparador,"==")==0)
+					return("BNE");
+				if(strcmp(comparador,">")==0)
+					return("BLE");
+				if(strcmp(comparador,"<")==0)
+					return("BGE");
+				if(strcmp(comparador,">=")==0)
+					return("BLT");
+				if(strcmp(comparador,"<=")==0)
+					return("BGT");
+				if(strcmp(comparador,"!=")==0)
 					return("BEQ");
 				break;
 		}
