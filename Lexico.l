@@ -54,7 +54,7 @@
 	char* cortarCadena(char* ,int);
 	char* reemplazarCaracter(char const * const,  char const * const,  char const * const) ;
 	void grabarTablaDeSimbolos(int);
-	void insertarEnTablaDeSimbolos(enum sectorTabla,enum tipoDato);
+	void insertarEnTablaDeSimbolos(enum sectorTabla,enum tipoDato,char*);
 	char* normalizar(char*);
 	int buscarEnTablaDeSimbolos(enum sectorTabla, char*);
 	void mensajeDeError(enum error,const char*);
@@ -105,7 +105,7 @@ CONST_REAL					([0-9]*\.[0-9]+)
 ">="						{ guardarToken("CMP_MAYIG\n");strcpy(yylval.cadena,yytext);return COMPARADOR; }
 "and"						{ guardarToken("AND\n");return AND; }
 "or"						{ guardarToken("OR\n");return OR; }
-"not"              			{ guardarToken("OP_NOT\n");return OP_NOT; }
+"!"              			{ guardarToken("OP_NOT\n");return OP_NOT; }
 "programa"					{ guardarToken("PROGRAMA\n");return PROGRAMA;}
 "fin_programa"				{ guardarToken("FIN_PROGRAMA\n");return FIN_PROGRAMA;}
 "DECVAR"					{ guardarToken("DECLARACIONES\n");return DECLARACIONES;}
@@ -128,10 +128,10 @@ CONST_REAL					([0-9]*\.[0-9]+)
 "_"							{ guardarToken("GB\n");return GB;}
 "{"							{ guardarToken("LLAVE_ABIERTA\n");return LLAVE_ABIERTA;}
 "}"							{ guardarToken("LLAVE_CERRADA\n");return LLAVE_CERRADA;}
-{ID}						{ guardarToken("ID\n");strcpy(yylval.cadena,yytext);insertarEnTablaDeSimbolos(sectorVariables, sinTipo);return ID;}
-{CONST_ENTERO}	  			{ guardarToken("CONST_ENTERO\n");strcpy(yylval.cadena,yytext);insertarEnTablaDeSimbolos(sectorConstantes, tipoEntero);return CONST_ENTERO;}
-{CONST_REAL}				{ guardarToken("CONST_REAL\n");strcpy(yylval.cadena,yytext);insertarEnTablaDeSimbolos(sectorConstantes, tipoReal);return CONST_REAL;}
-{CONST_CADENA}				{ guardarToken("CONST_CADENA\n");strcpy(yylval.cadena,yytext);insertarEnTablaDeSimbolos(sectorConstantes, tipoCadena);return CONST_CADENA;}
+{ID}						{ guardarToken("ID\n");strcpy(yylval.cadena,yytext);insertarEnTablaDeSimbolos(sectorVariables, sinTipo,yytext);return ID;}
+{CONST_ENTERO}	  			{ guardarToken("CONST_ENTERO\n");strcpy(yylval.cadena,yytext);insertarEnTablaDeSimbolos(sectorConstantes, tipoEntero,yytext);return CONST_ENTERO;}
+{CONST_REAL}				{ guardarToken("CONST_REAL\n");strcpy(yylval.cadena,yytext);insertarEnTablaDeSimbolos(sectorConstantes, tipoReal,yytext);return CONST_REAL;}
+{CONST_CADENA}				{ guardarToken("CONST_CADENA\n");strcpy(yylval.cadena,yytext);insertarEnTablaDeSimbolos(sectorConstantes, tipoCadena,yytext);return CONST_CADENA;}
 {COMENTARIO}				{ guardarToken("COMENTARIO\n");}
 "\n"
 "\r\n"
@@ -282,25 +282,25 @@ char* obtenerTipo(enum sectorTabla sector, enum tipoDato tipo){
 	}
 }
 
-void insertarEnTablaDeSimbolos(enum sectorTabla sector, enum tipoDato tipo){
+void insertarEnTablaDeSimbolos(enum sectorTabla sector, enum tipoDato tipo, char *valor){
 	char *cadena=(char*)malloc(sizeof(char));
 	switch(sector){
 		case sectorConstantes:
-			if(buscarEnTablaDeSimbolos(sectorConstantes,yytext)!=NO_ENCONTRADO)
+			if(buscarEnTablaDeSimbolos(sectorConstantes,valor)!=NO_ENCONTRADO)
 				return;
 			switch (tipo) {
 				case tipoReal:
-					if (atof(yytext)<0 || atof(yytext)>FLT_MAX)
-						mensajeDeError(errorRealFueraDeRango,yytext);
-					strcpy(tablaConstantes[indiceConstante].valor,yytext);
+					if (atof(valor)<0 || atof(valor)>FLT_MAX)
+						mensajeDeError(errorRealFueraDeRango,valor);
+					strcpy(tablaConstantes[indiceConstante].valor,valor);
 					tablaConstantes[indiceConstante].tipo=tipoReal;
 					tablaConstantes[indiceConstante].longitud=0;
 					tablaConstantes[indiceConstante].limite=0;
-					strcpy(tablaConstantes[indiceConstante++].nombre,normalizar(yytext));
+					strcpy(tablaConstantes[indiceConstante++].nombre,normalizar(valor));
 					break;
 
 				case tipoCadena:
-					strcpy(cadena,yytext);
+					strcpy(cadena,valor);
 					cortarCadena(cadena,preMaxCadena);
 					cadena=reemplazarCaracter(cadena,"\"","");
 					if(strlen(cadena)>=CADENA_MAXIMA)
@@ -313,10 +313,10 @@ void insertarEnTablaDeSimbolos(enum sectorTabla sector, enum tipoDato tipo){
 					break;
 
 				case tipoEntero:
-					strcpy(cadena,yytext);
+					strcpy(cadena,valor);
 					cortarCadena(cadena,preMaxEntero);
 					if (atoi(cadena)<0 || atoi(cadena)>ENTERO_MAXIMO)
-						mensajeDeError(errorEnteroFueraDeRango,yytext);
+						mensajeDeError(errorEnteroFueraDeRango,valor);
 					strcpy(tablaConstantes[indiceConstante].valor,cadena);
 					tablaConstantes[indiceConstante].tipo=tipoEntero;
 					tablaConstantes[indiceConstante].longitud=0;
@@ -327,7 +327,7 @@ void insertarEnTablaDeSimbolos(enum sectorTabla sector, enum tipoDato tipo){
 			break;
 
 		case sectorVariables:
-			cadena=cortarCadena(yytext,preMaxCadena);
+			cadena=cortarCadena(valor,preMaxCadena);
 			cadena=reemplazarCaracter(cadena,"\"","");
 			if(strlen(cadena)>=CADENA_MAXIMA)
 				mensajeDeError(errorCadenaDemasiadoLarga, cadena);

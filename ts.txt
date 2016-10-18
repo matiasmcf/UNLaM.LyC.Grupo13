@@ -1,18 +1,29 @@
 NOMBRE                          |	TIPO           |	VALOR                           |	LONGITUD     |	LIMITE       
 
-_v                              |	array          |	----------------------------    |	----------   |	5            
+_asd                            |	array          |	----------------------------    |	----------   |	4            
+_abc                            |	array          |	----------------------------    |	----------   |	5            
 _a                              |	entero         |	----------------------------    |	----------   |	----------   
 _b                              |	entero         |	----------------------------    |	----------   |	----------   
-_c                              |	entero         |	----------------------------    |	----------   |	----------   
-_d                              |	entero         |	----------------------------    |	----------   |	----------   
-_f                              |	real           |	----------------------------    |	----------   |	----------   
+_c                              |	cadena         |	----------------------------    |	----------   |	----------   
+_d                              |	cadena         |	----------------------------    |	----------   |	----------   
+_e                              |	entero         |	----------------------------    |	----------   |	----------   
 _g                              |	real           |	----------------------------    |	----------   |	----------   
-_h                              |	real           |	----------------------------    |	----------   |	----------   
-_5                              |	const_entera   |	5                               |	----------   |	----------   
-_Hola_mundo                     |	const_cadena   |	Hola mundo                      |	10           |	----------   
-_2                              |	const_entera   |	2                               |	----------   |	----------   
 _4                              |	const_entera   |	4                               |	----------   |	----------   
-_3                              |	const_entera   |	3                               |	----------   |	----------   
-_0                              |	const_entera   |	0                               |	----------   |	----------   
+_5                              |	const_entera   |	5                               |	----------   |	----------   
+_Inicio_del_programa            |	const_cadena   |	Inicio del programa             |	19           |	----------   
+_10                             |	const_entera   |	10                              |	----------   |	----------   
+_20                             |	const_entera   |	20                              |	----------   |	----------   
+_cadena                         |	const_cadena   |	cadena                          |	6            |	----------   
+__de_prueba                     |	const_cadena   |	 de prueba                      |	10           |	----------   
+_2                              |	const_entera   |	2                               |	----------   |	----------   
 _1                              |	const_entera   |	1                               |	----------   |	----------   
+_0                              |	const_entera   |	0                               |	----------   |	----------   
+_a_es_igual_a_cero              |	const_cadena   |	a es igual a cero               |	17           |	----------   
+_a_es_distinto_de_cero          |	const_cadena   |	a es distinto de cero           |	21           |	----------   
+_3                              |	const_entera   |	3                               |	----------   |	----------   
 _7                              |	const_entera   |	7                               |	----------   |	----------   
+_8                              |	const_entera   |	8                               |	----------   |	----------   
+_9                              |	const_entera   |	9                               |	----------   |	----------   
+_avg_mayor_a_asd[2]             |	const_cadena   |	avg mayor a asd[2]              |	18           |	----------   
+_avg_menor_a_asd[2]             |	const_cadena   |	avg menor a asd[2]              |	18           |	----------   
+_Fin_del_programa               |	const_cadena   |	Fin del programa                |	16           |	----------   

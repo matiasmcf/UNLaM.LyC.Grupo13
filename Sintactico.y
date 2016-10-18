@@ -44,9 +44,25 @@
 		ErrorTipoAverage
 	};
 
-		enum tipoDeError{
+	enum tipoDeError{
 		ErrorSintactico,
 		ErrorLexico
+	};
+
+	enum tipoCondicion{
+		condicionIf,
+		condicionRepeat
+	};
+
+	enum and_or{
+		and,
+		or,
+		condicionSimple
+	};
+
+	enum tipoSalto{
+		normal,
+		inverso
 	};
 
 ///////////////////// ESTRUCUTURAS  ////////////////////////////////
@@ -62,7 +78,10 @@
 	{
 		char *cadena;
 		int cantExpresiones;
+		int salto1;
+		int salto2;
 		int nro;
+		enum and_or andOr;
 	}t_info;
 
 	typedef struct s_nodoPila{
@@ -77,12 +96,12 @@
 	int yyerror();
 	
 	//Funciones para notacion intermedia
-	void avg_agregarApolaca(char*,int);
-	void insertarEnPolacaD(char*);
+	void insertarEnPolaca(char*);
 	void guardarPolaca();
+	char* obtenerSalto(enum tipoSalto);
 	//Funciones para manejo de pilas
 	void vaciarPila(t_pila*);
-	t_info* sacar_de_pila(t_pila*);
+	t_info* sacarDePila(t_pila*);
 	void crearPila(t_pila*);
 	int ponerEnPila(t_pila*,t_info*);
 	t_info* topeDePila(t_pila*);
@@ -120,7 +139,10 @@
 	t_pila pilaIf;
 	t_pila pilaWhile;
 	char ultimoComparador[3];
-
+	char nombreVector[CADENA_MAXIMA];
+	int inicioAsignacionMultiple;
+	int expresionesRestantes;
+	enum tipoCondicion tipoCondicion;
 	%}
 
 	%union {
@@ -278,27 +300,18 @@ sentencia_repeat:
 		info.cadena=(char*)malloc(sizeof(char)*CADENA_MAXIMA);
 		info.nro=contadorWhile++;
 		sprintf(info.cadena,"[repeat_%d]",info.nro);
-		insertarEnPolacaD(info.cadena);
+		insertarEnPolaca(info.cadena);
+		sprintf(info.cadena,"repeat_%d",info.nro);
 		ponerEnPila(&pilaWhile,&info);
 	}
-	bloque_sentencias WHILE  P_A condicion P_C 
+	bloque_sentencias WHILE
+	{
+		tipoCondicion=condicionRepeat;
+	}  
+	P_A condicion P_C 
 	{
 		printf("FIN REPEAT\n");
-		insertarEnPolacaD("CMP");
- 		insertarEnPolacaD(sacar_de_pila(&pilaWhile)->cadena);
-		//TODO: Revisar si las instrucciones son correctas
-		if(strcmp(ultimoComparador,"==")==0)
-			insertarEnPolacaD("BEQ");
-		if(strcmp(ultimoComparador,">")==0)
-			insertarEnPolacaD("BGT");
-		if(strcmp(ultimoComparador,"<")==0)
-			insertarEnPolacaD("BLT");
-		if(strcmp(ultimoComparador,">=")==0)
-			insertarEnPolacaD("BGE");
-		if(strcmp(ultimoComparador,"<=")==0)
-			insertarEnPolacaD("BLE");
-		if(strcmp(ultimoComparador,"!=")==0)
-			insertarEnPolacaD("BNE");
+		sacarDePila(&pilaWhile);
 	}
 	;
 
@@ -310,34 +323,22 @@ sentencia_if:
 		info.cadena=(char*)malloc(sizeof(char)*CADENA_MAXIMA);
 		info.nro=contadorIf++;
 		sprintf(info.cadena,"[if_%d]",info.nro);
-		insertarEnPolacaD(info.cadena);
+		insertarEnPolaca(info.cadena);
 		ponerEnPila(&pilaIf,&info);
+		tipoCondicion=condicionIf;
 	}
 	P_A condicion P_C
 	{
-		topeDePila(&pilaIf)->cantExpresiones=contadorPolaca+1;
-		insertarEnPolacaD("CMP");
-		insertarEnPolacaD("");
-		//TODO: Revisar si las instrucciones son correctas
-		if(strcmp(ultimoComparador,"==")==0)
-			insertarEnPolacaD("BNE");
-		if(strcmp(ultimoComparador,">")==0)
-			insertarEnPolacaD("BLE");
-		if(strcmp(ultimoComparador,"<")==0)
-			insertarEnPolacaD("BGE");
-		if(strcmp(ultimoComparador,">=")==0)
-			insertarEnPolacaD("BLT");
-		if(strcmp(ultimoComparador,"<=")==0)
-			insertarEnPolacaD("BGT");
-		if(strcmp(ultimoComparador,"!=")==0)
-			insertarEnPolacaD("BEQ");
+		char aux[10];
+ 		sprintf(aux,"[then_if_%d]",topeDePila(&pilaIf)->nro);
+ 		insertarEnPolaca(aux);
 	} 
 	bloque_if ENDIF
 	{
 		printf("ENDIF\n");/*insertarEnPolaca("_IF");*/
 		char aux[20];
-		sprintf(aux,"[endif_%d]",sacar_de_pila(&pilaIf)->nro);
-		insertarEnPolacaD(aux);
+		sprintf(aux,"[endif_%d]",sacarDePila(&pilaIf)->nro);
+		insertarEnPolaca(aux);
 	}
 	;
 
@@ -346,27 +347,37 @@ bloque_if:
  	{
  		char aux[10];
  		sprintf(aux,"endif_%d",topeDePila(&pilaIf)->nro);
- 		strcpy(polaca[topeDePila(&pilaIf)->cantExpresiones],aux);
+ 		if(topeDePila(&pilaIf)->andOr==and||topeDePila(&pilaIf)->andOr==or)
+ 			strcpy(polaca[topeDePila(&pilaIf)->salto2],aux);
+ 		strcpy(polaca[topeDePila(&pilaIf)->salto1],aux);
  	}
  	|bloque_sentencias 
  	{
  		char aux[10];
  		sprintf(aux,"endif_%d",topeDePila(&pilaIf)->nro);
- 		insertarEnPolacaD(aux);
- 		insertarEnPolacaD("BI");
+ 		insertarEnPolaca(aux);
+ 		insertarEnPolaca("BI");
  	}
  	ELSE 
  	{
  		char aux[10];
  		sprintf(aux,"[else_%d]",topeDePila(&pilaIf)->nro);
- 		insertarEnPolacaD(aux);
+ 		insertarEnPolaca(aux);
  	}
  		bloque_sentencias 
  	{
  		printf("ELSE\n");
  		char aux[10];
  		sprintf(aux,"else_%d",topeDePila(&pilaIf)->nro);
- 		strcpy(polaca[topeDePila(&pilaIf)->cantExpresiones],aux);
+ 		if(topeDePila(&pilaIf)->andOr==and)
+ 			strcpy(polaca[topeDePila(&pilaIf)->salto2],aux);
+ 		else
+ 			if(topeDePila(&pilaIf)->andOr==or){
+ 				sprintf(aux,"then_if_%d",topeDePila(&pilaIf)->nro);
+ 				strcpy(polaca[topeDePila(&pilaIf)->salto2],aux);
+ 			}
+ 		sprintf(aux,"else_%d",topeDePila(&pilaIf)->nro);
+ 		strcpy(polaca[topeDePila(&pilaIf)->salto1],aux);
  	}
  	;
 
@@ -374,22 +385,135 @@ comparacion : expresion COMPARADOR expresion {strcpy(ultimoComparador,$<cadena>2
 	;
 
 condicion:
-	comparacion 
+	comparacion
+	{
+		switch(tipoCondicion){
+			case condicionIf:
+				topeDePila(&pilaIf)->andOr=condicionSimple;
+				topeDePila(&pilaIf)->salto1=contadorPolaca+1;
+				insertarEnPolaca("CMP");
+				insertarEnPolaca("");
+				//TODO: Revisar si las instrucciones son correctas
+				insertarEnPolaca(obtenerSalto(inverso));
+				break;
+
+			case condicionRepeat:
+				topeDePila(&pilaWhile)->andOr=condicionSimple;
+				insertarEnPolaca("CMP");
+		 		insertarEnPolaca(topeDePila(&pilaWhile)->cadena);
+				//TODO: Revisar si las instrucciones son correctas
+				insertarEnPolaca(obtenerSalto(normal));
+				char aux[20];
+				sprintf(aux,"[end_repeat_%d]",topeDePila(&pilaWhile)->nro);
+				insertarEnPolaca(aux);
+				break;
+		}
+		
+	} 
 	|OP_NOT comparacion 
-	|comparacion and_or comparacion
+	{
+		switch(tipoCondicion){
+			case condicionIf:
+				topeDePila(&pilaIf)->andOr=condicionSimple;
+				topeDePila(&pilaIf)->salto1=contadorPolaca+1;
+				insertarEnPolaca("CMP");
+				insertarEnPolaca("");
+				//TODO: Revisar si las instrucciones son correctas
+				insertarEnPolaca(obtenerSalto(normal));
+				break;
+
+			case condicionRepeat:
+				topeDePila(&pilaWhile)->andOr=condicionSimple;
+				insertarEnPolaca("CMP");
+		 		insertarEnPolaca(topeDePila(&pilaWhile)->cadena);
+				//TODO: Revisar si las instrucciones son correctas
+				insertarEnPolaca(obtenerSalto(inverso));
+				char aux[20];
+				sprintf(aux,"[end_repeat_%d]",topeDePila(&pilaWhile)->nro);
+				insertarEnPolaca(aux);
+				break;
+		}
+		
+	} 
+	|comparacion and_or 
+	{
+		switch(tipoCondicion){
+			case condicionIf:
+				switch(topeDePila(&pilaIf)->andOr){
+					case and:
+						topeDePila(&pilaIf)->salto2=contadorPolaca+1;
+						insertarEnPolaca("CMP");
+						insertarEnPolaca("");
+						//TODO: Revisar si las instrucciones son correctas
+						insertarEnPolaca(obtenerSalto(inverso));
+						break;
+
+					case or:
+						topeDePila(&pilaIf)->salto2=contadorPolaca+1;
+						insertarEnPolaca("CMP");
+						insertarEnPolaca("");
+						//TODO: Revisar si las instrucciones son correctas
+						insertarEnPolaca(obtenerSalto(normal));
+						break;
+				}
+				break;
+
+			case condicionRepeat:
+				switch(topeDePila(&pilaWhile)->andOr){
+					case and:
+						insertarEnPolaca("CMP");
+				 		char aux[20];
+						sprintf(aux,"end_repeat_%d",topeDePila(&pilaWhile)->nro);
+						insertarEnPolaca(aux);
+						//TODO: Revisar si las instrucciones son correctas
+						insertarEnPolaca(obtenerSalto(inverso));
+						break;
+
+					case or:
+						insertarEnPolaca("CMP");
+				 		insertarEnPolaca(topeDePila(&pilaWhile)->cadena);
+						//TODO: Revisar si las instrucciones son correctas
+						insertarEnPolaca(obtenerSalto(normal));
+						break;
+				}
+				break;
+		}
+	}
+	comparacion
+	{
+		switch(tipoCondicion){
+			case condicionIf:
+				topeDePila(&pilaIf)->salto1=contadorPolaca+1;
+				insertarEnPolaca("CMP");
+				insertarEnPolaca("");
+				//TODO: Revisar si las instrucciones son correctas
+				insertarEnPolaca(obtenerSalto(inverso));
+				break;
+
+			case condicionRepeat:
+				insertarEnPolaca("CMP");
+		 		insertarEnPolaca(topeDePila(&pilaWhile)->cadena);
+				//TODO: Revisar si las instrucciones son correctas
+				insertarEnPolaca(obtenerSalto(normal));
+				char aux[20];
+				sprintf(aux,"[end_repeat_%d]",topeDePila(&pilaWhile)->nro);
+				insertarEnPolaca(aux);
+				break;
+		}
+	}
 	;
 
 write:  
 	WRITE CONST_CADENA {printf("WRITE CONSTANTE\n"); 
-		insertarEnPolacaD($<cadena>2);
-		insertarEnPolacaD("_WRITE");}
+		insertarEnPolaca(tablaConstantes[buscarEnTablaDeSimbolos(sectorConstantes,$<cadena>2)].nombre);
+		insertarEnPolaca("WRITE");}
 	|WRITE ID 
 	{
 		printf("WRITE VARIABLE\n");
 		if(tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>1)].tipo==sinTipo)
 			yyerrormsj($<cadena>1,ErrorSintactico,ErrorIdNoDeclarado,""); 
-		insertarEnPolacaD($<cadena>2);
-		insertarEnPolacaD("_WRITE");
+		insertarEnPolaca(tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>2)].nombre);
+		insertarEnPolaca("WRITE");
 	}
 	;
 
@@ -399,14 +523,26 @@ read:
 		printf("READ VARIABLE\n");
 		if(tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>1)].tipo==sinTipo)
 			yyerrormsj($<cadena>1,ErrorSintactico,ErrorIdNoDeclarado,"");	 
-		insertarEnPolacaD($<cadena>2);
-		insertarEnPolacaD("_READ");
+		insertarEnPolaca(tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>2)].nombre);
+		insertarEnPolaca("READ");
 	}
 	;
 
 and_or:
-	AND
-	|OR
+	AND 	
+	{
+		if(tipoCondicion==condicionIf)
+			topeDePila(&pilaIf)->andOr=and;
+		else
+			topeDePila(&pilaWhile)->andOr=and;
+	}
+	|OR 	
+	{
+		if(tipoCondicion==condicionIf)
+			topeDePila(&pilaIf)->andOr=or;
+		else
+			topeDePila(&pilaWhile)->andOr=or;
+	}
 	;
 
 asignacion: 
@@ -417,34 +553,33 @@ asignacion:
 		esAsignacion=1;
 		printf("ASIGNACION: %s\t", $<cadena>1);
 		tipoAsignacion=tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>1)].tipo;
+		insertarEnPolaca(tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>1)].nombre);
 		printf("(tipo: %s)\n",obtenerTipo(sectorVariables,tipoAsignacion));
 	} 
 	OP_ASIG expresion 
 	{
-		printf("FIN ASIGNACION\n");	
 		esAsignacion=0;
 		tipoAsignacion=sinTipo;
-		insertarEnPolacaD($<cadena>1);
-		printf("FIN ASIGNACION\n");	
-		insertarEnPolacaD("=");
+		insertarEnPolaca("=");
 		printf("FIN ASIGNACION\n");		
 	}
 	;
 
 asignacion_vector: 
-	vector OP_ASIG {printf("ASIGNACION VECTOR: %s\n", $<cadena>1);} expresion 
+	vector OP_ASIG {printf("ASIGNACION VECTOR: %s\n", $<cadena>1);} expresion {insertarEnPolaca("=");}
 	|vector OP_ASIG
 	{
 		printf("ASIGNACION VECTOR MULTIPLE: %s\n", $<cadena>1);
 		esAsignacionVectorMultiple=1;
 		contadorExpresionesVector=0;
+		inicioAsignacionMultiple=contadorPolaca-1;
 	} LLAVE_ABIERTA expresiones LLAVE_CERRADA 
 	{
 		if(contadorExpresionesVector!=cantidadDeExpresionesEsperadasEnVector)
 			yyerrormsj($<cadena>1,ErrorSintactico,ErrorArrayAsignacionMultiple,"");
 		esAsignacionVectorMultiple=0;
 		contadorExpresionesVector=0;
-		cantidadDeExpresionesEsperadasEnVector=0;
+		cantidadDeExpresionesEsperadasEnVector=expresionesRestantes=0;
 	}
 	;
 
@@ -456,13 +591,13 @@ expresion:
 		if(esAsignacion==1&&tipoAsignacion==tipoCadena)
 			yyerrormsj("resta", ErrorSintactico,ErrorOperacionNoValida,"");
 
-	} termino {insertarEnPolacaD("-");}
+	} termino {insertarEnPolaca("-");}
     |expresion OP_SUMA 
     {
     	if(esAsignacion==1&&tipoAsignacion==tipoCadena)
 			yyerrormsj("suma", ErrorSintactico,ErrorOperacionNoValida,"");
     	printf("SUMA\n");
-    }termino {insertarEnPolacaD("+");}
+    }termino {insertarEnPolaca("+");}
 	|expresion OP_CONCAT 
 	{
 		if(esAsignacion==1&&tipoAsignacion!=tipoCadena)
@@ -478,13 +613,13 @@ termino:
     	printf("MULTIPLICACION\n");
     	if(esAsignacion==1&&tipoAsignacion==tipoCadena)
 			yyerrormsj("multiplicacion", ErrorSintactico,ErrorOperacionNoValida,"");
-    } factor {insertarEnPolacaD("*");}
+    } factor {insertarEnPolaca("*");}
     |termino OP_DIV 
     {
     	printf("DIVISION\n");
     	if(esAsignacion==1&&tipoAsignacion==tipoCadena)
 			yyerrormsj("division", ErrorSintactico,ErrorOperacionNoValida,"");
-    } factor {insertarEnPolacaD("/");}
+    } factor {insertarEnPolaca("/");}
 	;
 
 factor:
@@ -498,11 +633,7 @@ factor:
     		if(esAsignacion==1&& tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>1)].tipo!=tipoAsignacion)
 				yyerrormsj($<cadena>1, ErrorSintactico,ErrorIdDistintoTipo,"");
 		//Acciones
-		if(topeDePila(&pilaAVG)!=NULL){
-			avg_agregarApolaca($<cadena>1,0);
-		}
-		else
-			insertarEnPolacaD($<cadena>1);
+		insertarEnPolaca(tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>1)].nombre);
 	}
     | vector 
     | CONST_ENTERO 
@@ -513,11 +644,7 @@ factor:
     		if(esAsignacion==1&&tipoAsignacion!=tipoEntero)
     			yyerrormsj($<cadena>1, ErrorSintactico,ErrorConstanteDistintoTipo,"");
 		//Acciones
-		if(topeDePila(&pilaAVG)!=NULL){
-			avg_agregarApolaca($<cadena>1,0);
-		}
-		else
-			insertarEnPolacaD($<cadena>1);
+		insertarEnPolaca(tablaConstantes[buscarEnTablaDeSimbolos(sectorConstantes,$<cadena>1)].nombre);
     } 
     | CONST_REAL 
     {
@@ -526,11 +653,7 @@ factor:
     	if(esAsignacion==1&&tipoAsignacion!=tipoReal)
     		yyerrormsj($<cadena>1, ErrorSintactico,ErrorConstanteDistintoTipo,"");
     	//Acciones
-		if(topeDePila(&pilaAVG)!=NULL){
-			avg_agregarApolaca($<cadena>1,0);
-		}
-		else
-			insertarEnPolacaD($<cadena>1);
+		insertarEnPolaca(tablaConstantes[buscarEnTablaDeSimbolos(sectorConstantes,$<cadena>1)].nombre);
     }
 	| CONST_CADENA 
 	{
@@ -539,18 +662,15 @@ factor:
 		if(esAsignacion==1&&tipoAsignacion!=tipoCadena)
     		yyerrormsj($<cadena>1, ErrorSintactico,ErrorConstanteDistintoTipo,"");
     	//Acciones
-		if(topeDePila(&pilaAVG)!=NULL){
-			avg_agregarApolaca($<cadena>1,0);
-		}
-		else
-			insertarEnPolacaD($<cadena>1);
+		insertarEnPolaca(tablaConstantes[buscarEnTablaDeSimbolos(sectorConstantes,$<cadena>1)].nombre);
 	}
     | P_A expresion P_C 
     | average
     {
-    	//verificacion de errores
+    	//Verificacion de errores
     	if(esAsignacion==1&&tipoAsignacion!=tipoReal)
     		yyerrormsj($<cadena>1, ErrorSintactico,ErrorTipoAverage,"");
+    	//Acciones
     }
     ;
 
@@ -564,20 +684,11 @@ vector:
     		if(esAsignacion==1&&tipoAsignacion!=tipoEntero)
     			yyerrormsj($<cadena>1, ErrorSintactico,ErrorIdDistintoTipo,"");
     	//Acciones
-    	if(topeDePila(&pilaAVG)!=NULL){
-    		strcpy(aux,$<cadena>1);
-	    	strcat(aux,"[");
-	    	strcat(aux,$<cadena>3);
-	    	strcat(aux,"]");
-			avg_agregarApolaca(aux,0);
-		}
-		else{
-	    	strcpy(aux,$<cadena>1);
-	    	strcat(aux,"[");
-	    	strcat(aux,$<cadena>3);
-	    	strcat(aux,"]");
-	    	insertarEnPolacaD(aux);
-    	}
+	    strcpy(aux,tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>1)].nombre);
+	    strcat(aux,"[");
+	    strcat(aux,$<cadena>3);
+	    strcat(aux,"]");
+	    insertarEnPolaca(aux);
     }
     | ID C_A CONST_ENTERO C_C
     {	
@@ -590,25 +701,18 @@ vector:
     		yyerrormsj($<cadena>1,ErrorSintactico,ErrorArrayFueraDeRango,$<cadena>3);
     	if(esAsignacionVectorMultiple==0){
     		cantidadDeExpresionesEsperadasEnVector=atoi($<cadena>3);
+    		expresionesRestantes=cantidadDeExpresionesEsperadasEnVector;
+    		strcpy(nombreVector,tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>1)].nombre);
     	}
     	if(topeDePila(&pilaAVG)==NULL)
     		if(esAsignacion==1&&tipoAsignacion!=tipoEntero)
     			yyerrormsj($<cadena>1, ErrorSintactico,ErrorIdDistintoTipo,"");
     	//Acciones
-    	if(topeDePila(&pilaAVG)!=NULL){
-			strcpy(aux,$<cadena>1);
-	    	strcat(aux,"[");
-	    	strcat(aux,$<cadena>3);
-	    	strcat(aux,"]");
-			avg_agregarApolaca(aux,0);
-		}
-		else{
-	    	strcpy(aux,$<cadena>1);
-	    	strcat(aux,"[");
-	    	strcat(aux,$<cadena>3);
-	    	strcat(aux,"]");
-	    	insertarEnPolacaD(aux);
-    	}
+    	strcpy(aux,tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>1)].nombre);
+	    strcat(aux,"[");
+	    strcat(aux,$<cadena>3);
+	    strcat(aux,"]");
+	    insertarEnPolaca(aux);
     }
     ;
 
@@ -632,29 +736,54 @@ average:
 		printf("Expresiones en AVG_%d: %d\n", topeDePila(&pilaAVG)->nro,topeDePila(&pilaAVG)->cantExpresiones);
 		char aux[50];
 		sprintf(aux,"%d",topeDePila(&pilaAVG)->cantExpresiones);
-		avg_agregarApolaca(aux,1);
-		insertarEnPolacaD("/");
-		sacar_de_pila(&pilaAVG);
+		insertarEnTablaDeSimbolos(sectorConstantes,tipoEntero,aux);
+		sprintf(aux,"%s",tablaConstantes[buscarEnTablaDeSimbolos(sectorConstantes,aux)].nombre);
+		insertarEnPolaca(aux);
+		insertarEnPolaca("/");
+		sacarDePila(&pilaAVG);
 	}
 
 expresiones:
 	expresion 
 	{
 		if(topeDePila(&pilaAVG)==NULL){
-			if(esAsignacionVectorMultiple==1)
+			if(esAsignacionVectorMultiple==1){
 				contadorExpresionesVector++;
+				char aux[CADENA_MAXIMA];
+				sprintf(aux,"%s[%d]",nombreVector,expresionesRestantes);
+				strcpy(polaca[inicioAsignacionMultiple],aux);
+				expresionesRestantes--;
+				insertarEnPolaca("=");
+			}
 		}
-		else
+		else{
 			topeDePila(&pilaAVG)->cantExpresiones++;
+		}
 	}
-	| expresiones COMA expresion
+	| expresiones 
+	{
+		if(topeDePila(&pilaAVG)==NULL)
+			if(esAsignacionVectorMultiple==1){
+				insertarEnPolaca("");
+				inicioAsignacionMultiple=contadorPolaca-1;
+		}
+	}
+	COMA expresion
 	{
 		if(topeDePila(&pilaAVG)==NULL){
-			if(esAsignacionVectorMultiple)
+			if(esAsignacionVectorMultiple){
 				contadorExpresionesVector++;
+				char aux[CADENA_MAXIMA];
+				sprintf(aux,"%s[%d]",nombreVector,expresionesRestantes);
+				strcpy(polaca[inicioAsignacionMultiple],aux);
+				expresionesRestantes--;
+				insertarEnPolaca("=");
+			}
 		}
-		else
+		else{
 			topeDePila(&pilaAVG)->cantExpresiones++;
+			insertarEnPolaca("+");
+		}
 	}
 
 %%
@@ -762,7 +891,7 @@ int yyerror()
 	    return 1;
 	}
 
-	t_info * sacar_de_pila(t_pila* pp)
+	t_info * sacarDePila(t_pila* pp)
 	{
 		t_info* info = (t_info *) malloc(sizeof(t_info));
 	    if(!*pp){
@@ -789,16 +918,7 @@ int yyerror()
 		return &((*pila)->info);
 	}
 
-	void avg_agregarApolaca(char* info,int fin){
-		insertarEnPolacaD(info);
-		if(fin==0){
-			if(topeDePila(&pilaAVG)->cantExpresiones>=1&&fin==0){
-				insertarEnPolacaD("+");
-			}
-		}	
-	}
-
-	void insertarEnPolacaD(char* info){
+	void insertarEnPolaca(char* info){
 		if(polaca==NULL)
 			polaca=(char**)malloc(sizeof(char*));
 		polaca=(char**)realloc(polaca,(contadorPolaca+1)*sizeof(char*));
@@ -828,4 +948,38 @@ int yyerror()
 			fprintf(pt,"%s\n",polaca[i]);
 		}
 		fclose(pt);
+	}
+
+	char* obtenerSalto(enum tipoSalto tipo){
+		switch(tipo){
+			case normal:
+				if(strcmp(ultimoComparador,"==")==0)
+					return("BEQ");
+				if(strcmp(ultimoComparador,">")==0)
+					return("BGT");
+				if(strcmp(ultimoComparador,"<")==0)
+					return("BLT");
+				if(strcmp(ultimoComparador,">=")==0)
+					return("BGE");
+				if(strcmp(ultimoComparador,"<=")==0)
+					return("BLE");
+				if(strcmp(ultimoComparador,"!=")==0)
+					return("BNE");
+				break;
+
+			case inverso:
+				if(strcmp(ultimoComparador,"==")==0)
+					return("BNE");
+				if(strcmp(ultimoComparador,">")==0)
+					return("BLE");
+				if(strcmp(ultimoComparador,"<")==0)
+					return("BGE");
+				if(strcmp(ultimoComparador,">=")==0)
+					return("BLT");
+				if(strcmp(ultimoComparador,"<=")==0)
+					return("BGT");
+				if(strcmp(ultimoComparador,"!=")==0)
+					return("BEQ");
+				break;
+		}
 	}
