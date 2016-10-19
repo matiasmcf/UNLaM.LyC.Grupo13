@@ -707,7 +707,11 @@ vector:
     	sprintf(aux,"[then_if_%d]",contadorIf);
     	insertarEnPolaca(aux);
     	//Mensaje de error
-    	sprintf(aux,"%s[%s] fuera de rango [1;%d]",$<cadena>1,$<cadena>3,tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>1)].limite);
+    	sprintf(aux,"Vector %s[%s]",$<cadena>1,$<cadena>3);
+    	insertarEnTablaDeSimbolos(sectorConstantes,tipoCadena,aux);
+    	insertarEnPolaca(tablaConstantes[buscarEnTablaDeSimbolos(sectorConstantes,aux)].nombre);
+    	insertarEnPolaca("WRITE");
+    	sprintf(aux,"fuera de rango [1;%d]",tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>1)].limite);
     	insertarEnTablaDeSimbolos(sectorConstantes,tipoCadena,aux);
     	insertarEnPolaca(tablaConstantes[buscarEnTablaDeSimbolos(sectorConstantes,aux)].nombre);
     	insertarEnPolaca("WRITE");
@@ -965,7 +969,7 @@ int yyerror()
 		//strcat(&(polaca[contadorPolaca][0]),itoa(contadorPolaca,aux,10));
 		//strcat(&(polaca[contadorPolaca][0])," ]\t");
 		//
-		strcpy(&(polaca[contadorPolaca++][0]),info);
+		strcpy(polaca[contadorPolaca++],info);
 		//printf("INSERTADO: %s\n",info);
 	}
 

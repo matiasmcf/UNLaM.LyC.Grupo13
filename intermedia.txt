@@ -97,7 +97,9 @@ CMP
 end_if_2
 BGE
 [then_if_2]
-_asd[b]_fuera_de_rango_[1P4]
+_Vector_asd[b]
+WRITE
+_fuera_de_rango_[1P4]
 WRITE
 EXIT
 [end_if_2]
@@ -114,7 +116,9 @@ CMP
 end_if_3
 BGE
 [then_if_3]
-_abc[a]_fuera_de_rango_[1P5]
+_Vector_abc[a]
+WRITE
+_fuera_de_rango_[1P5]
 WRITE
 EXIT
 [end_if_3]
