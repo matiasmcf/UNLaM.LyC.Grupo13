@@ -283,7 +283,7 @@ char* obtenerTipo(enum sectorTabla sector, enum tipoDato tipo){
 }
 
 void insertarEnTablaDeSimbolos(enum sectorTabla sector, enum tipoDato tipo, char *valor){
-	char *cadena=(char*)malloc(sizeof(char));
+	char *cadena=(char*)malloc(sizeof(char)*CADENA_MAXIMA);
 	switch(sector){
 		case sectorConstantes:
 			if(buscarEnTablaDeSimbolos(sectorConstantes,valor)!=NO_ENCONTRADO)
