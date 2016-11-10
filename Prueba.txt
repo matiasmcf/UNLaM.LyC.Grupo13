@@ -1,62 +1,8 @@
 programa 
 	DECVAR
-		asd(4), abc(5): array
-		a, b: entero
-		c, d: cadena
-		e: entero
-		g: real
+		a, b, c, d, e, f, z : entero
 	ENDEC
 
-	WRITE "Inicio del programa"
-	a=10
-
-	-/PRUEBA: cota numerica/-
-	-/a=1000000000000000000000000000000000000/-
-	b=20
-	c="cadena"
-
-	-/PRUEBA: cota para cadenas/-
-	-/c="cadenaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"/-
-	d=" de prueba"
-
-	-/PRUEBA: tipo/-
-	-/d=30/-
-	e=2
-
-	-/PRUEBA: ID no definido/-
-	-/f=30/-
-	-/Comentario-/anidado/-/-
-
-	-/PRUEBA: selecciones y ciclos anidados/-
-	if(a<b and b==20)
-		repeat
-			repeat
-				e=e-1
-			while (e>1)
-			a=a-1
-		while(a!=0)
-		if(a==0)
-			WRITE "a es igual a cero"
-		else
-			WRITE "a es distinto de cero"
-		endif
-	endif
-
-	-/PRUEBA: tema especial ARRAY/-
-	asd[2]=5+4*(2-1)
-	abc[3]={4,b,asd[2]}
-	asd[b]=abc[a]+1
-
-	-/PRUEBA: tema especial AVERAGE/-
-	g=AVG([a,g,AVG([7,8,9])])
-
-	-/PRUEBA: temas especiales combinados/-
-	-/abc[3]={4,AVG([2,a+b,8]),asd[2]}/-
-	if(AVG([1,2+a,abc[1]])>=asd[2])
-		WRITE "avg mayor a asd[2]"
-	else
-		WRITE "avg menor a asd[2]"
-	endif
-
-	WRITE "Fin del programa"
+	z = a + b * c - d / (e + f) + 20
+	
 fin_programa
