@@ -1,1 +1,3 @@
 Generación de código Assembler
+	• ARRAY: falta la asignación múltiple y probarlo en expresiones
+	• AND/OR en condiciones

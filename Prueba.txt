@@ -1,8 +1,34 @@
 programa 
 	DECVAR
-		a, b, c, d, e, f, z : entero
+		asd(4), abc(5): array
+		a, b , z, x: entero
+		c, d: cadena
+		e: entero
+		g: real
 	ENDEC
 
-	z = a + b * c - d / (e + f) + 20
-	
+	WRITE "Inicio del programa"
+
+	a=10
+	b=5
+	repeat
+		if(a>b)
+			WRITE a
+		else
+			WRITE b
+		endif
+		a=a-1
+	while(a>=0)
+	g=AVG([3,5,13])
+	WRITE "g es"
+	WRITE g
+	WRITE "Asignando vector"
+	asd[3]=570
+	a=asd[3]
+	WRITE "asd 3 es"
+	WRITE a
+	-/abc[3]={4,b,asd[2]}/-
+	-/asd[b]=abc[a]+1/-
+
+	WRITE "Fin del programa"
 fin_programa
