@@ -9,23 +9,29 @@ programa
 
 	WRITE "Inicio del programa"
 	a=10
+	WRITE "a es:"
+	WRITE a
 
 	-/PRUEBA: cota numerica/-
 	-/a=1000000000000000000000000000000000000/-
 	b=20
+	WRITE "b es:"
+	WRITE b
 	c="cadena"
+	WRITE "c es:"
+	WRITE c
 
 	-/PRUEBA: cota para cadenas/-
 	-/c="cadenaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"/-
 	d=" de prueba"
-
+	WRITE "d es:"
+	WRITE d
+	
 	-/PRUEBA: tipo/-
 	-/d=30/-
 	e=2
-
-	-/PRUEBA: ID no definido/-
-	-/f=30/-
-	-/Comentario-/anidado/-/-
+	WRITE "e es:"
+	WRITE e
 
 	-/PRUEBA: selecciones y ciclos anidados/-
 	if(a<b and b==20)

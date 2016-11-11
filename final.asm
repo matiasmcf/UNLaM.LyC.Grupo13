@@ -12,31 +12,21 @@ include number.asm
 	@false dd 0.0
 	@_asd 	DW 4 dup (0)
 	@_abc 	DW 5 dup (0)
-	@_a 	DD 0.0
-	@_b 	DD 0.0
-	@_z 	DD 0.0
-	@_x 	DD 0.0
+	@_a 	DW 0
+	@_b 	DW 0
+	@_z 	DW 0
+	@_x 	DW 0
 	@_c 	DB MAXTEXTSIZE dup (?),'$'
 	@_d 	DB MAXTEXTSIZE dup (?),'$'
-	@_e 	DD 0.0
+	@_e 	DW 0
 	@_g 	DD 0.0
-	@_4 	DD 4.0
-	@_5 	DD 5.0
+	@_4 	DW 4
+	@_5 	DW 5
 	@_Inicio_del_programa 	DB "Inicio del programa",'$',31 dup(?)
-	@_10 	DD 10.0
-	@_1 	DD 1.0
-	@_0 	DD 0.0
-	@_3 	DD 3.0
-	@_13 	DD 13.0
-	@_g_es 	DB "g es",'$',46 dup(?)
-	@_Asignando_vector 	DB "Asignando vector",'$',34 dup(?)
-	@_570 	DD 570.0
-	@_asd_3_es 	DB "asd 3 es",'$',42 dup(?)
+	@_2 	DW 2
+	@_10 	DW 10
 	@_Fin_del_programa 	DB "Fin del programa",'$',34 dup(?)
-	@aux0 	DD 0.0
-	@aux1 	DD 0.0
-	@aux2 	DD 0.0
-	@aux3 	DD 0.0
+	@_aux0 	DD 0.0
 
 .CODE
 .startup
@@ -47,77 +37,23 @@ include number.asm
 
 	displayString 	@_Inicio_del_programa
 	newLine 1
-	fld 	@_10
-	fstp 	@_a
-	fld 	@_5
-	fstp 	@_b
-repeat_0:
-if_0:
-	fld 	@_b
-	fld 	@_a
-	fcomp
-	fstsw	ax
-	fwait
-	sahf
-	jbe		else_0
-then_if_0:
-	displayFloat 	@_a,3
-	newLine 1
-	jmp		endif_0
-else_0:
-	displayFloat 	@_b,3
-	newLine 1
-endif_0:
-	fld 	@_1
-	fld 	@_a
-	fsubr
-	fstp 	@aux0
-	fld 	@aux0
-	fstp 	@_a
-	fld 	@_0
-	fld 	@_a
-	fcomp
-	fstsw	ax
-	fwait
-	sahf
-	jae		repeat_0
-end_repeat_0:
-	fld 	@_5
-	fld 	@_3
-	fadd
-	fstp 	@aux1
-	fld 	@_13
-	fld 	@aux1
-	fadd
-	fstp 	@aux2
-	fld 	@_3
-	fld 	@aux2
-	fdivr
-	fstp 	@aux3
-	fld 	@aux3
-	fstp 	@_g
-	displayString 	@_g_es
-	newLine 1
-	displayFloat 	@_g,3
-	newLine 1
-	displayString 	@_Asignando_vector
-	newLine 1
-	mov ax, 3
+	mov ax, @_2
 	mov bx, 2
 	mul bx
 	mov bx, ax
 	add bx, OFFSET @_asd
-	mov ax, 570
+	fild 	@_10
+	fiadd 	@_5
+	fistp 	@_aux0
+	mov ax, @_aux0
 	mov word ptr[bx],ax
-	mov ax, 3
+	mov ax, @_2
 	mov bx, 2
 	mul bx
 	mov bx, ax
 	add bx, OFFSET @_asd
 	mov ax, word ptr[bx]
-	mov @_a,eax
-	displayString 	@_asd_3_es
-	newLine 1
+	mov @_a,ax
 	displayInteger 	@_a,3
 	newLine 1
 	displayString 	@_Fin_del_programa

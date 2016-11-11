@@ -242,6 +242,8 @@ char* normalizar(char* cadena){
 	aux=reemplazarCaracter(aux,"-","m");
 	aux=reemplazarCaracter(aux," ","_");
 	aux=reemplazarCaracter(aux,"\"","");
+	aux=reemplazarCaracter(aux,"[","C");
+	aux=reemplazarCaracter(aux,"]","C");
 	return aux;
 }
 

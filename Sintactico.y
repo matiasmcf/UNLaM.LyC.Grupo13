@@ -727,9 +727,9 @@ vector:
     	sprintf(aux,"#if_%d",contadorIf);
     	ponerEnPolaca(&polaca,aux);
     	ponerEnPolaca(&polaca,tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>3)].nombre);
-    	ponerEnPolaca(&polaca,"CMP");
-    	sprintf(aux,"%d",tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>1)].limite);
+    	sprintf(aux,"_%d",tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>1)].limite);
     	ponerEnPolaca(&polaca,aux);
+    	ponerEnPolaca(&polaca,"CMP");
     	sprintf(aux,"$then_if_%d",contadorIf);
     	ponerEnPolaca(&polaca,aux);
     	ponerEnPolaca(&polaca,obtenerSalto2(">=",normal));
@@ -752,6 +752,10 @@ vector:
     	insertarEnTablaDeSimbolos(sectorConstantes,tipoCadena,aux);
     	ponerEnPolaca(&polaca,tablaConstantes[buscarEnTablaDeSimbolos(sectorConstantes,aux)].nombre);
     	ponerEnPolaca(&polaca,"WRITE");
+    	sprintf(aux,"Cancelando ejecucion...");
+    	insertarEnTablaDeSimbolos(sectorConstantes,tipoCadena,aux);
+    	ponerEnPolaca(&polaca,tablaConstantes[buscarEnTablaDeSimbolos(sectorConstantes,aux)].nombre);
+    	ponerEnPolaca(&polaca,"WRITE");
     	ponerEnPolaca(&polaca,"EXIT");
     	sprintf(aux,"#end_if_%d",contadorIf);
     	ponerEnPolaca(&polaca,aux);
@@ -759,8 +763,8 @@ vector:
     	//Agregar a polaca
 	    strcpy(aux,tablaVariables[buscarEnTablaDeSimbolos(sectorVariables,$<cadena>1)].nombre);
 	    ponerEnPolaca(&polaca,aux);
-		insertarEnTablaDeSimbolos(sectorConstantes,tipoCadena,$<cadena>3);
-		strcpy(aux,"|");
+		//insertarEnTablaDeSimbolos(sectorConstantes,tipoCadena,$<cadena>3);
+		strcpy(aux,"€");
 		strcat(aux,$<cadena>3);
 	    ponerEnPolaca(&polaca,aux);	   
     }
@@ -834,7 +838,7 @@ expresiones:
 			if(esAsignacionVectorMultiple==1){
 				contadorExpresionesVector++;
 				char aux[CADENA_MAXIMA];
-				sprintf(aux,"%s[%d]",nombreVector,expresionesRestantes);
+				sprintf(aux,"|%d",contadorExpresionesVector);
 				ponerEnPolacaNro(&polaca,inicioAsignacionMultiple,aux);
 				expresionesRestantes--;
 				ponerEnPolaca(&polaca,"=");
@@ -850,6 +854,7 @@ expresiones:
 			if(esAsignacionVectorMultiple==1){
 				ponerEnPolaca(&polaca,"");
 				inicioAsignacionMultiple=contadorPolaca-1;
+				ponerEnPolaca(&polaca,"");
 		}
 	}
 	COMA expresion
@@ -859,8 +864,10 @@ expresiones:
 			if(esAsignacionVectorMultiple){
 				contadorExpresionesVector++;
 				char aux[CADENA_MAXIMA];
-				sprintf(aux,"%s[%d]",nombreVector,expresionesRestantes);
+				sprintf(aux,"%s",nombreVector);
 				ponerEnPolacaNro(&polaca,inicioAsignacionMultiple,aux);
+				sprintf(aux,"|%d",contadorExpresionesVector);
+				ponerEnPolacaNro(&polaca,inicioAsignacionMultiple+1,aux);
 				expresionesRestantes--;
 				ponerEnPolaca(&polaca,"=");
 			}
@@ -1266,7 +1273,7 @@ int yyerror()
 			fprintf(pf,"\t@%s ",tablaVariables[i].nombre);
 			switch(tablaVariables[i].tipo){
 				case tipoEntero:
-					fprintf(pf,"\tDD 0.0\n");
+					fprintf(pf,"\tDW 0\n");
 					break;
 				case tipoReal:
 					fprintf(pf,"\tDD 0.0\n");
@@ -1284,7 +1291,7 @@ int yyerror()
 		for(i = 0; i<indiceConstante; i++){
 			switch(tablaConstantes[i].tipo){
 				case tipoEntero:
-					fprintf(pf,"\t@%s \tDD %d.0\n",tablaConstantes[i].nombre,atoi(tablaConstantes[i].valor));
+					fprintf(pf,"\t@%s \tDW %d\n",tablaConstantes[i].nombre,atoi(tablaConstantes[i].valor));
 					break;
 				case tipoReal:
 					fprintf(pf,"\t@%s \tDD %s\n",tablaConstantes[i].nombre,tablaConstantes[i].valor);
@@ -1298,7 +1305,7 @@ int yyerror()
 
 		//DECLARACION DE AUXILIARES
 		for(i=0;i<auxiliaresNecesarios;i++){
-			fprintf(pf,"\t@aux%d \tDD 0.0\n",i);
+			fprintf(pf,"\t@_aux%d \tDD 0.0\n",i);
 		}
 
 		//ZONA DE CODIGO
@@ -1309,7 +1316,7 @@ int yyerror()
 	    	char linea[CADENA_MAXIMA];
 	    	int pos;
 	    	strcpy(linea,aux->info.cadena);
-	    	//printf("RECORRIENDO: %s\n",linea);
+	    	printf("RECORRIENDO: %s\n",linea);
 
 	    	//PARA VARIABLES
 	    	if((pos=buscarEnTablaDeSimbolosASM(sectorVariables,linea))!=NO_ENCONTRADO){
@@ -1339,13 +1346,25 @@ int yyerror()
 
 		    //OPERADORES ARITMETICOS
 		    if(strcmp(linea,"*")==0){
-				fprintf(pf,"\tfld \t@%s\n", sacarDePila(&pilaASM)->cadena);
-				fprintf(pf,"\tfld \t@%s\n", sacarDePila(&pilaASM)->cadena);
-				fprintf(pf,"\tfmul\n");
-				strcpy(aux1,"aux");
-				itoa(nroAux,aux2,10);
-	   			strcat(aux1,aux2);
-				fprintf(pf,"\tfstp \t@%s\n", aux1);
+		    	t_info *op1=sacarDePila(&pilaASM);
+		    	t_info *op2=sacarDePila(&pilaASM);
+		    	if(op1->tipo==tipoReal){
+					fprintf(pf,"\tfld \t@%s\n", op1->cadena);
+					fprintf(pf,"\tfld \t@%s\n", op2->cadena);
+					fprintf(pf,"\tfmul\n");
+					strcpy(aux1,"_aux");
+					itoa(nroAux,aux2,10);
+		   			strcat(aux1,aux2);
+					fprintf(pf,"\tfstp \t@%s\n", aux1);
+				}
+				else{
+					fprintf(pf,"\tfild \t@%s\n", op1->cadena);
+					fprintf(pf,"\tfimul \t@%s\n", op2->cadena); 
+					strcpy(aux1,"_aux");
+					itoa(nroAux,aux2,10);
+		   			strcat(aux1,aux2);
+					fprintf(pf,"\tfistp \t@%s\n", aux1);
+				}
 				t_info info;
 	    		info.cadena=(char*)malloc(sizeof(char)*CADENA_MAXIMA);
 	    		strcpy(info.cadena,aux1);
@@ -1353,13 +1372,25 @@ int yyerror()
 	    		nroAux++;
 			}
 			if(strcmp(linea,"+")==0){
-				fprintf(pf,"\tfld \t@%s\n", sacarDePila(&pilaASM)->cadena);
-				fprintf(pf,"\tfld \t@%s\n", sacarDePila(&pilaASM)->cadena);
-				fprintf(pf,"\tfadd\n");
-				strcpy(aux1,"aux");
-				itoa(nroAux,aux2,10);
-	   			strcat(aux1,aux2);
-				fprintf(pf,"\tfstp \t@%s\n", aux1);
+				t_info *op1=sacarDePila(&pilaASM);
+		    	t_info *op2=sacarDePila(&pilaASM);
+		    	if(op1->tipo==tipoReal){
+					fprintf(pf,"\tfld \t@%s\n", op1->cadena);
+					fprintf(pf,"\tfld \t@%s\n", op2->cadena);
+					fprintf(pf,"\tfadd\n");
+					strcpy(aux1,"_aux");
+					itoa(nroAux,aux2,10);
+		   			strcat(aux1,aux2);
+					fprintf(pf,"\tfstp \t@%s\n", aux1);
+				}
+				else{
+					fprintf(pf,"\tfild \t@%s\n", op1->cadena);
+					fprintf(pf,"\tfiadd \t@%s\n", op2->cadena); 
+					strcpy(aux1,"_aux");
+					itoa(nroAux,aux2,10);
+		   			strcat(aux1,aux2);
+					fprintf(pf,"\tfistp \t@%s\n", aux1);
+				}
 				t_info info;
 				info.cadena=(char*)malloc(sizeof(char)*CADENA_MAXIMA);
 	    		strcpy(info.cadena,aux1);
@@ -1367,13 +1398,25 @@ int yyerror()
 	    		nroAux++;
 			}
 			if(strcmp(linea,"/")==0){
-				fprintf(pf,"\tfld \t@%s\n", sacarDePila(&pilaASM)->cadena);
-				fprintf(pf,"\tfld \t@%s\n", sacarDePila(&pilaASM)->cadena);
-				fprintf(pf,"\tfdivr\n");
-				strcpy(aux1,"aux");
-				itoa(nroAux,aux2,10);
-	   			strcat(aux1,aux2);
-				fprintf(pf,"\tfstp \t@%s\n", aux1);
+				t_info *op1=sacarDePila(&pilaASM);
+		    	t_info *op2=sacarDePila(&pilaASM);
+		    	if(op1->tipo==tipoReal){
+					fprintf(pf,"\tfld \t@%s\n", op1->cadena);
+					fprintf(pf,"\tfld \t@%s\n", op2->cadena);
+					fprintf(pf,"\tfdivr\n");
+					strcpy(aux1,"_aux");
+					itoa(nroAux,aux2,10);
+		   			strcat(aux1,aux2);
+					fprintf(pf,"\tfstp \t@%s\n", aux1);
+				}
+				else{
+					fprintf(pf,"\tfild \t@%s\n", op1->cadena);
+					fprintf(pf,"\tfidivr \t@%s\n", op2->cadena); 
+					strcpy(aux1,"_aux");
+					itoa(nroAux,aux2,10);
+		   			strcat(aux1,aux2);
+					fprintf(pf,"\tfistp \t@%s\n", aux1);
+				}
 				t_info info;
 	    		info.cadena=(char*)malloc(sizeof(char)*CADENA_MAXIMA);
 	    		strcpy(info.cadena,aux1);
@@ -1381,13 +1424,25 @@ int yyerror()
 	    		nroAux++;
 			}
 			if(strcmp(linea,"-")==0){
-				fprintf(pf,"\tfld \t@%s\n", sacarDePila(&pilaASM)->cadena);
-				fprintf(pf,"\tfld \t@%s\n", sacarDePila(&pilaASM)->cadena);
-				fprintf(pf,"\tfsubr\n");
-				strcpy(aux1,"aux");
-				itoa(nroAux,aux2,10);
-	   			strcat(aux1,aux2);
-				fprintf(pf,"\tfstp \t@%s\n", aux1);
+				t_info *op1=sacarDePila(&pilaASM);
+		    	t_info *op2=sacarDePila(&pilaASM);
+		    	if(op1->tipo==tipoReal){
+					fprintf(pf,"\tfld \t@%s\n", op1->cadena);
+					fprintf(pf,"\tfld \t@%s\n", op2->cadena);
+					fprintf(pf,"\tfsubr\n");
+					strcpy(aux1,"_aux");
+					itoa(nroAux,aux2,10);
+		   			strcat(aux1,aux2);
+					fprintf(pf,"\tfstp \t@%s\n", aux1);
+				}
+				else{
+					fprintf(pf,"\tfild \t@%s\n", op1->cadena);
+					fprintf(pf,"\tfisubr \t@%s\n", op2->cadena); 
+					strcpy(aux1,"_aux");
+					itoa(nroAux,aux2,10);
+		   			strcat(aux1,aux2);
+					fprintf(pf,"\tfistp \t@%s\n", aux1);
+				}
 				t_info info;
 				info.cadena=(char*)malloc(sizeof(char)*CADENA_MAXIMA);
 	    		strcpy(info.cadena,aux1);
@@ -1397,8 +1452,16 @@ int yyerror()
 
 			//COMPARADORES
 			if(strcmp(linea,"CMP")==0){
-				fprintf(pf,"\tfld \t@%s\n", sacarDePila(&pilaASM)->cadena);
-				fprintf(pf,"\tfld \t@%s\n", sacarDePila(&pilaASM)->cadena);
+				t_info *op1= sacarDePila(&pilaASM);
+				t_info *op2= sacarDePila(&pilaASM);
+				if(op1->tipo==tipoReal){
+					fprintf(pf,"\tfld \t@%s\n", op1->cadena);
+					fprintf(pf,"\tfld \t@%s\n", op2->cadena);
+				}
+				else{
+					fprintf(pf,"\tfild \t@%s\n", op1->cadena);
+					fprintf(pf,"\tfild \t@%s\n", op2->cadena);
+				}
 			}
 
 			// >
@@ -1448,6 +1511,10 @@ int yyerror()
 		    	ponerEnPila(&pilaASM,&info);
 			}
 
+			if(strcmp(linea, "EXIT")==0){
+				fprintf(pf,"\tmov ah, 4ch\n\tint 21h\n");
+			}
+
 			//VECTORES
 			if(strchr(linea, '|')!=NULL){
 				//char auxAasignar[CADENA_MAXIMA];
@@ -1456,7 +1523,23 @@ int yyerror()
 				strcpy(auxPosicion,reemplazarCaracter(linea, "|",""));
 				char auxNombre[CADENA_MAXIMA];
 				strcpy(auxNombre,sacarDePila(&pilaASM)->cadena);
-				fprintf(pf,"\tmov ax, %s\n",auxPosicion);
+				fprintf(pf,"\tmov ax, @_%s\n",auxPosicion);
+				fprintf(pf,"\tmov bx, 2\n\tmul bx\n\tmov bx, ax\n\tadd bx, OFFSET @%s\n",auxNombre);
+				//fprintf(pf,"\tfld\t@_%s\n",auxPosicion);
+				//fprintf(pf,"\tfld\t2.0\n\tfmul\n\tfld OFFSET @%s\n\tfadd\n",auxNombre);
+				ultimoTipo=tipoArray;
+				asignacionConArray=TRUE;
+			//	\tmov ax, %s\n\tmov word ptr[bx],ax\n
+			}
+
+			if(strchr(linea, '€')!=NULL){
+				//char auxAasignar[CADENA_MAXIMA];
+				//strcpy(auxAasignar,sacarDePila(&pilaASM)->cadena);
+				char auxPosicion[CADENA_MAXIMA];
+				strcpy(auxPosicion,reemplazarCaracter(linea, "€",""));
+				char auxNombre[CADENA_MAXIMA];
+				strcpy(auxNombre,sacarDePila(&pilaASM)->cadena);
+				fprintf(pf,"\tmov ax, @_%s\n",auxPosicion);
 				fprintf(pf,"\tmov bx, 2\n\tmul bx\n\tmov bx, ax\n\tadd bx, OFFSET @%s\n",auxNombre);
 				//fprintf(pf,"\tfld\t@_%s\n",auxPosicion);
 				//fprintf(pf,"\tfld\t2.0\n\tfmul\n\tfld OFFSET @%s\n\tfadd\n",auxNombre);
@@ -1485,7 +1568,7 @@ int yyerror()
 				fprintf(pf,"\tmov si, OFFSET\t@%s\n",cad2);
 				fprintf(pf,"\tmov di, OFFSET\t@%s\n",aux1);
 				fprintf(pf,"\tcall concat\n");
-				strcpy(aux1,"aux");
+				strcpy(aux1,"_aux");
 				itoa(nroAux,aux2,10);
 	   			strcat(aux1,aux2);
 				t_info info;
@@ -1504,7 +1587,7 @@ int yyerror()
 						//printf("ASIGNO ALGO AL ARRAY\n");
 						char auxAasignar[CADENA_MAXIMA];
 						strcpy(auxAasignar,sacarDePila(&pilaASM)->cadena);
-						fprintf(pf,"\tmov ax, %s\n\tmov word ptr[bx],ax\n",reemplazarCaracter(auxAasignar,"_",""));
+						fprintf(pf,"\tmov ax, @_%s\n\tmov word ptr[bx],ax\n",reemplazarCaracter(auxAasignar,"_",""));
 						ultimaAsignacionFueVector=FALSE;
 						
 					}
@@ -1512,7 +1595,7 @@ int yyerror()
 						//printf("ASIGNO EL ARRAY A UNA VARIABLE\n");
 						char auxAasignar[CADENA_MAXIMA];
 						strcpy(auxAasignar,sacarDePila(&pilaASM)->cadena);
-						fprintf(pf,"\tmov ax, word ptr[bx]\n\tmov @%s,eax\n",auxAasignar);
+						fprintf(pf,"\tmov ax, word ptr[bx]\n\tmov @%s,ax\n",auxAasignar);
 						ultimaAsignacionFueVector=TRUE;
 					}
 					ultimoTipo=sinTipo;
@@ -1528,14 +1611,26 @@ int yyerror()
 					else{
 						if(huboAsignacion==FALSE){
 							char auxCadena1[CADENA_MAXIMA];
-							strcpy(auxCadena1,sacarDePila(&pilaASM)->cadena);
-							fprintf(pf,"\tfstp \t@%s\n",auxCadena1);
+							t_info *op=sacarDePila(&pilaASM);
+							strcpy(auxCadena1,op->cadena);
+							if(op->tipo==tipoEntero)
+								fprintf(pf,"\tfistp \t@%s\n",auxCadena1);
+							else
+								fprintf(pf,"\tfstp \t@%s\n",auxCadena1);
 							huboAsignacion=TRUE;
 							ultimaAsignacionFueVector=FALSE;
 						}
 						else{
-							fprintf(pf,"\tfld \t@%s\n", sacarDePila(&pilaASM)->cadena);
-							fprintf(pf,"\tfstp \t@%s\n",sacarDePila(&pilaASM)->cadena);
+							t_info *op=sacarDePila(&pilaASM);
+							if(op->tipo==tipoReal){
+								fprintf(pf,"\tfld \t@%s\n", op->cadena);
+								fprintf(pf,"\tfstp \t@%s\n",sacarDePila(&pilaASM)->cadena);
+							}
+							else{
+								fprintf(pf,"\tfild \t@%s\n", op->cadena);
+								fprintf(pf,"\tfistp \t@%s\n",sacarDePila(&pilaASM)->cadena);
+							}
+							
 							huboAsignacion=TRUE;
 							ultimaAsignacionFueVector=FALSE;
 						}
@@ -1547,10 +1642,7 @@ int yyerror()
 			if(strcmp(linea,"WRITE")==0){
 				switch(ultimoTipo){
 			    	case tipoEntero:
-			    	if(ultimaAsignacionFueVector==TRUE)
-				    		fprintf(pf,"\tdisplayInteger \t@%s,3\n\tnewLine 1\n",sacarDePila(&pilaASM)->cadena);
-				    	else
-							fprintf(pf,"\tdisplayFloat \t@%s,3\n\tnewLine 1\n",sacarDePila(&pilaASM)->cadena);
+				    	fprintf(pf,"\tdisplayInteger \t@%s,3\n\tnewLine 1\n",sacarDePila(&pilaASM)->cadena);
 						break;
 					case tipoReal:
 						fprintf(pf,"\tdisplayFloat \t@%s,3\n\tnewLine 1\n",sacarDePila(&pilaASM)->cadena);

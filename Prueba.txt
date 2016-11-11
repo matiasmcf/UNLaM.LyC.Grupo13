@@ -8,27 +8,8 @@ programa
 	ENDEC
 
 	WRITE "Inicio del programa"
-
-	a=10
-	b=5
-	repeat
-		if(a>b)
-			WRITE a
-		else
-			WRITE b
-		endif
-		a=a-1
-	while(a>=0)
-	g=AVG([3,5,13])
-	WRITE "g es"
-	WRITE g
-	WRITE "Asignando vector"
-	asd[3]=570
-	a=asd[3]
-	WRITE "asd 3 es"
+	asd[2]=5+10
+	a=asd[2]
 	WRITE a
-	-/abc[3]={4,b,asd[2]}/-
-	-/asd[b]=abc[a]+1/-
-
 	WRITE "Fin del programa"
 fin_programa

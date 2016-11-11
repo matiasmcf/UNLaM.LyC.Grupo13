@@ -13,13 +13,6 @@ _g                              |	real           |	---------------------------- 
 _4                              |	const_entera   |	4                               |	----------   |	----------   
 _5                              |	const_entera   |	5                               |	----------   |	----------   
 _Inicio_del_programa            |	const_cadena   |	Inicio del programa             |	19           |	----------   
+_2                              |	const_entera   |	2                               |	----------   |	----------   
 _10                             |	const_entera   |	10                              |	----------   |	----------   
-_1                              |	const_entera   |	1                               |	----------   |	----------   
-_0                              |	const_entera   |	0                               |	----------   |	----------   
-_3                              |	const_entera   |	3                               |	----------   |	----------   
-_13                             |	const_entera   |	13                              |	----------   |	----------   
-_g_es                           |	const_cadena   |	g es                            |	4            |	----------   
-_Asignando_vector               |	const_cadena   |	Asignando vector                |	16           |	----------   
-_570                            |	const_entera   |	570                             |	----------   |	----------   
-_asd_3_es                       |	const_cadena   |	asd 3 es                        |	8            |	----------   
 _Fin_del_programa               |	const_cadena   |	Fin del programa                |	16           |	----------   
