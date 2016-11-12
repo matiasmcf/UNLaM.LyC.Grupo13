@@ -4,12 +4,105 @@ programa
 		a, b , z, x: entero
 		c, d: cadena
 		e: entero
-		g: real
+		g, h: real
 	ENDEC
 
 	WRITE "Inicio del programa"
-	asd[2]=5+10
-	a=asd[2]
+
+	g=3.5
+	WRITE "g es:"
+	WRITE g
+	
+	a=10
+	WRITE "a es:"
 	WRITE a
+
+	-/PRUEBA: cota numerica/-
+	-/a=1000000000000000000000000000000000000/-
+	b=20
+	WRITE "b es:"
+	WRITE b
+	c="cadena"
+	WRITE "c es:"
+	WRITE c
+
+	-/PRUEBA: expresiones/-
+	a=((10+b)/(10-4))+5*2
+	WRITE "resultado de la expresion es:"
+	WRITE a
+
+	-/PRUEBA: cota para cadenas/-
+	-/c="cadenaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"/-
+	d=" de prueba"
+	WRITE "d es:"
+	WRITE d
+	
+	-/PRUEBA: tipo/-
+	-/d=30/-
+	e=2
+	WRITE "e es:"
+	WRITE e
+
+	-/PRUEBA: selecciones y ciclos anidados/-
+	if(a<b and b==20)
+		repeat
+			-/WRITE a/-
+			e=2
+			repeat
+				-/WRITE e/-
+				e=e-1
+			while (e>1)
+			a=a-1
+		while(a!=0)
+		if(a==0)
+			WRITE "a es igual a cero"
+		else
+			WRITE "a es distinto de cero"
+		endif
+	endif
+
+	-/PRUEBA: tema especial ARRAY/-
+	asd[2]=5+4*(2-1)
+	a=asd[2]
+	WRITE "asd[2] es:"
+	WRITE a
+
+	asd[3]={50,20*3,70}
+	b=2
+	asd[b]=60/3
+	a=asd[b]
+	WRITE "asd[b] es:"
+	WRITE a
+
+	a=10 +asd[2]+15
+	WRITE "10 mas asd[2] mas 15 es:"
+	WRITE a
+
+	-/PRUEBA; vector fuera de rango/-
+	-/b=20/-
+	-/a=asd[b]/-
+
+	-/PRUEBA: tema especial AVERAGE/-
+	h=4.0
+	g=6.0
+	g=AVG([h,g,AVG([7.0,8.0,9.0])])
+	WRITE "AVG es:"
+	WRITE g
+	a=asd[2]
+	WRITE "asd[2] es:"
+	WRITE a
+	if(asd[2]<21)
+		WRITE "asd[2] menor a 21"
+	else
+		WRITE "asd[2] mayor o igual a 21"
+	endif
+
+	if(AVG([h,g,AVG([7.0,8.0,9.0])])>asd[2])
+		WRITE "avg mayor a asd[2]"
+	else
+		WRITE "avg menor o igual a asd[2]"
+	endif
+
 	WRITE "Fin del programa"
+
 fin_programa

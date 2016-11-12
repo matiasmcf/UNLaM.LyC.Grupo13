@@ -1,4 +1,2 @@
 Generación de código Assembler
-	• ARRAY: probarlo en expresiones
-	• AND/OR en condiciones
-	• Revisar los TIPOS de aux en las declaraciones (DD-DW), buscar como diferenciarlos, y contar cuantos de cada uno debe haber.
+	• Problemas con tipos de dato en AVG (Por la mezcla de enteros con reales)
