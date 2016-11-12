@@ -1251,7 +1251,7 @@ int yyerror()
 	    	char linea[CADENA_MAXIMA];
 	    	int pos;
 	    	strcpy(linea,aux->info.cadena);
-	    	printf("RECORRIENDO: %s\n",linea);
+	    	//printf("RECORRIENDO: %s\n",linea);
 
 	    	//PARA VARIABLES
 	    	if((pos=buscarEnTablaDeSimbolosASM(sectorVariables,linea))!=NO_ENCONTRADO){
